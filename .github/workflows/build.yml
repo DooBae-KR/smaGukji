@@ -100,8 +100,11 @@ jobs:
           code=$?
           if [ $code -ne 0 ]; then
             echo "----- build.log tail -----"
-            tail -120 /tmp/build.log
-            MSG=$(tail -60 /tmp/build.log | tr '\n' '⏎' | sed 's/%/%%/g' | cut -c1-3000)
+            tail -200 /tmp/build.log
+            # 스택 트레이스가 아니라 «원인» 부분만 추린다.
+            MSG=$(grep -E "What went wrong|Caused by:|Execution failed|> [A-Z]|error:|FAILURE" /tmp/build.log \
+                  | grep -v "^\s*at " | head -25 \
+                  | tr '\n' '⏎' | sed 's/%/%%/g' | cut -c1-3000)
             echo "::error title=backend stage failed::$MSG"
             exit 1
           fi
