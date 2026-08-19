@@ -1,0 +1,52 @@
+# 운영 프로필. SPRING_PROFILES_ACTIVE=prod 로 켠다.
+#
+# 개발 기본값과 달라지는 지점만 둔다.
+
+spring:
+  jpa:
+    # 운영에서 SQL 을 그대로 찍으면 로그가 폭증하고 값이 새어나갈 수 있다.
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+
+  # 프론트엔드를 같은 JAR 에서 서빙하므로 정적 자원 캐시를 켠다.
+  web:
+    resources:
+      cache:
+        cachecontrol:
+          max-age: 30d
+          cache-public: true
+
+server:
+  # 프록시(로드밸런서) 뒤에 서므로 원본 프로토콜/호스트를 신뢰한다.
+  forward-headers-strategy: framework
+  compression:
+    enabled: true
+    mime-types: text/html,text/css,application/javascript,application/json,image/svg+xml
+  shutdown: graceful
+
+management:
+  endpoints:
+    web:
+      exposure:
+        # 헬스체크만 연다. 나머지 액추에이터는 밖으로 내보내지 않는다.
+        include: health
+  endpoint:
+    health:
+      show-details: never
+
+logging:
+  level:
+    root: INFO
+    com.smagukji.backend: INFO
+    org.hibernate.SQL: WARN
+
+app:
+  cors:
+    # 같은 오리진에서 서빙하므로 기본은 비운다.
+    # 프론트를 별도 도메인에 올릴 때만 CORS_ALLOWED_ORIGINS 로 지정한다.
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:}
+  assets:
+    # 운영 서버에는 로컬 이미지 폴더가 없다. 이미지는 이미 DB(asset_image)에 있다.
+    import-on-startup: false

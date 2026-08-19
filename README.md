@@ -41,6 +41,17 @@ cd frontend && npm install && npm run dev
 
 프론트엔드는 `/api` 요청을 백엔드로 프록시하므로 개발 중에는 CORS를 타지 않습니다.
 
+### 배포
+
+프론트엔드를 백엔드 JAR 안에 담아 **한 서비스로 배포**합니다.
+
+```bash
+cd backend && ./gradlew bootJar -PbuildFrontend
+SPRING_PROFILES_ACTIVE=prod java -jar build/libs/backend-0.0.1-SNAPSHOT.jar
+```
+
+Render · Fly.io · Docker 설정과 공개 전 점검 목록은 **[DEPLOY.md](DEPLOY.md)** 를 보세요.
+
 ### Windows 주의사항
 
 - **`JAVA_HOME`** 이 JDK 루트를 정확히 가리켜야 합니다. 한 단계 위를 가리키면 Gradle이

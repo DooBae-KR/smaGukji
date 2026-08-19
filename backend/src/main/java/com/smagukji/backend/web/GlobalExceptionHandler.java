@@ -5,6 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
+import org.springframework.web.ErrorResponse;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -62,12 +63,28 @@ public class GlobalExceptionHandler {
                 "이미 존재하거나 제약 조건에 맞지 않는 값입니다.");
     }
 
+    /** 없는 정적 자원·경로. SPA 폴백에서 제외한 /api/**, /actuator/** 가 여기로 온다. */
+    @ExceptionHandler(org.springframework.web.servlet.resource.NoResourceFoundException.class)
+    public ProblemDetail handleNoResource(
+            org.springframework.web.servlet.resource.NoResourceFoundException e) {
+        return problem(HttpStatus.NOT_FOUND, "리소스 없음", "요청한 경로를 찾을 수 없습니다.");
+    }
+
     /**
      * 마지막 안전망. 처리되지 않은 예외의 원문이 그대로 나가지 않게 한다.
-     * {@code include-message} 설정과 무관하게 여기서 막힌다.
+     *
+     * <p>단, Spring 이 이미 상태코드를 정해 던진 예외({@link ErrorResponse})는 그 상태를
+     * 존중한다. 전부 500 으로 뭉개면 404·405 같은 정상적인 응답까지 서버 오류로 바뀐다.
      */
     @ExceptionHandler(Exception.class)
     public ProblemDetail handleUnexpected(Exception e) {
+        if (e instanceof ErrorResponse errorResponse) {
+            HttpStatus status = HttpStatus.resolve(errorResponse.getStatusCode().value());
+            if (status != null && !status.is5xxServerError()) {
+                log.debug("클라이언트 오류 {}: {}", status, e.getClass().getSimpleName());
+                return problem(status, status.getReasonPhrase(), "요청을 처리할 수 없습니다.");
+            }
+        }
         log.error("처리되지 않은 예외", e);
         return problem(HttpStatus.INTERNAL_SERVER_ERROR, "서버 오류",
                 "요청을 처리하지 못했습니다. 잠시 후 다시 시도하세요.");

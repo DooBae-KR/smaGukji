@@ -49,12 +49,14 @@ public class AuthService {
     private static final int TOKEN_BYTES = 32;
 
     /**
-     * 최소 비밀번호 길이.
+     * 최소 비밀번호 길이. {@code APP_MIN_PASSWORD_LENGTH} 로 조정한다.
      *
-     * <p>⚠️ 로컬 개인 도구 기준으로 4자까지 허용한다. 이 앱을 사내망 밖이나 인터넷에
-     * 노출한다면 반드시 8 이상으로 올려야 한다. BCrypt 해시라도 4자리는 사실상 즉시 뚫린다.
+     * <p>⚠️ 기본 4자는 로컬 개인 도구 기준이다. 인터넷에 노출하면 4자리는 BCrypt 여도
+     * 사실상 즉시 뚫리므로 8 이상으로 올려야 한다. 낮게 둔 채 기동하면 경고 로그가 남는다.
      */
-    public static final int MIN_PASSWORD_LENGTH = 4;
+    private static final int SAFE_PASSWORD_LENGTH = 8;
+
+    private final int minPasswordLength;
 
     private final AppAccountRepository accountRepository;
     private final AppSessionRepository sessionRepository;
@@ -63,10 +65,19 @@ public class AuthService {
     private final SecureRandom random = new SecureRandom();
 
     public AuthService(AppAccountRepository accountRepository,
-            AppSessionRepository sessionRepository, AllianceRepository allianceRepository) {
+            AppSessionRepository sessionRepository, AllianceRepository allianceRepository,
+            @org.springframework.beans.factory.annotation.Value(
+                    "${app.security.min-password-length:4}") int minPasswordLength) {
         this.accountRepository = accountRepository;
         this.sessionRepository = sessionRepository;
         this.allianceRepository = allianceRepository;
+        this.minPasswordLength = Math.max(1, minPasswordLength);
+
+        if (this.minPasswordLength < SAFE_PASSWORD_LENGTH) {
+            log.warn("⚠️ 최소 비밀번호 길이가 {}자입니다. 인터넷에 노출한다면 "
+                    + "APP_MIN_PASSWORD_LENGTH 를 {} 이상으로 올리세요.",
+                    this.minPasswordLength, SAFE_PASSWORD_LENGTH);
+        }
     }
 
     /** 인증 실패. 원인을 세분화하지 않는다(ID 존재 여부가 새어나가지 않게). */
@@ -318,9 +329,9 @@ public class AuthService {
     // ---------------------------------------------------------------
 
     private String hash(String rawPassword) {
-        if (rawPassword == null || rawPassword.length() < MIN_PASSWORD_LENGTH) {
+        if (rawPassword == null || rawPassword.length() < minPasswordLength) {
             throw new IllegalArgumentException(
-                    "비밀번호는 " + MIN_PASSWORD_LENGTH + "자 이상이어야 합니다.");
+                    "비밀번호는 " + minPasswordLength + "자 이상이어야 합니다.");
         }
         // BCrypt 는 72바이트를 넘으면 조용히 잘라낸다. 잘림을 사용자가 모르게 두지 않는다.
         if (rawPassword.getBytes(StandardCharsets.UTF_8).length > 72) {

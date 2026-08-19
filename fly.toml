@@ -1,0 +1,50 @@
+# Fly.io 배포 설정 (https://fly.io)
+#
+# 쓰는 법
+#   1. flyctl 설치 후  fly auth login
+#   2. fly launch --no-deploy          (이 파일을 그대로 쓰겠다고 답한다)
+#   3. 비밀값을 넣는다 — 파일이 아니라 secret 으로 들어간다
+#        fly secrets set SUPABASE_DB_URL="jdbc:postgresql://..." \
+#                        SUPABASE_DB_USER="postgres.xxxx" \
+#                        SUPABASE_DB_PASSWORD="..."
+#   4. fly deploy
+#
+# ⚠️ 비밀값은 이 파일에 넣지 않는다. 커밋되는 파일이다.
+
+app = "smagukji"
+primary_region = "nrt"   # 도쿄. 서울(icn)이 열려 있으면 icn 이 더 가깝다.
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  SPRING_PROFILES_ACTIVE = "prod"
+  DB_POOL_MAX_SIZE = "3"
+  DB_POOL_MIN_IDLE = "1"
+  APP_MIN_PASSWORD_LENGTH = "8"
+  JPA_DDL_AUTO = "none"
+  ASSET_IMPORT_ON_STARTUP = "false"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  # 0 으로 두면 안 쓸 때 완전히 멈춰 비용이 들지 않는다. 대신 첫 요청이 느리다.
+  min_machines_running = 0
+
+  [http_service.concurrency]
+    type = "requests"
+    soft_limit = 50
+    hard_limit = 100
+
+[[http_service.checks]]
+  grace_period = "60s"
+  interval = "30s"
+  method = "GET"
+  timeout = "5s"
+  path = "/actuator/health"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"
