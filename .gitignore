@@ -1,24 +1,48 @@
-# Compiled class file
+# ---------------------------------------------------------------
+# 비밀 값
+# ---------------------------------------------------------------
+.env
+.env.*
+!.env.example
+
+# Claude Code 로컬 설정. 자동 생성된 명령 허용목록에 테스트 자격증명이 섞이므로 커밋하지 않는다.
+.claude/
+
+# ---------------------------------------------------------------
+# Java / Gradle
+# ---------------------------------------------------------------
 *.class
-
-# Log file
 *.log
-
-# BlueJ files
 *.ctxt
-
-# Mobile Tools for Java (J2ME)
 .mtj.tmp/
-
-# Package Files #
-*.jar
 *.war
 *.nar
 *.ear
-*.zip
-*.tar.gz
-*.rar
-
-# virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
 replay_pid*
+
+build/
+bin/
+out/
+.gradle/
+
+# ---------------------------------------------------------------
+# Node / Vite
+# ---------------------------------------------------------------
+node_modules/
+dist/
+dist-ssr/
+*.local
+.vite/
+
+# ---------------------------------------------------------------
+# IDE / OS
+# ---------------------------------------------------------------
+.idea/
+*.iml
+.vscode/
+.classpath
+.project
+.settings/
+.DS_Store
+Thumbs.db

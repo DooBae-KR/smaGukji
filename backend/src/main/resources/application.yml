@@ -1,0 +1,92 @@
+spring:
+  application:
+    name: smagukji-backend
+
+  # .env 파일을 properties 형식으로 읽어들인다.
+  # 저장소 루트(../.env) 와 backend/.env 를 모두 시도하고, 없으면 조용히 건너뛴다.
+  config:
+    import:
+      - optional:file:../.env[.properties]
+      - optional:file:./.env[.properties]
+
+  datasource:
+    url: ${SUPABASE_DB_URL}
+    username: ${SUPABASE_DB_USER}
+    password: ${SUPABASE_DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      # Supabase 풀러 뒤에 있으므로 커넥션 수를 작게 유지한다.
+      maximum-pool-size: ${DB_POOL_MAX_SIZE:5}
+      minimum-idle: ${DB_POOL_MIN_IDLE:1}
+      connection-timeout: 30000
+      idle-timeout: 300000
+      max-lifetime: 1200000
+      pool-name: smagukji-pool
+
+  jpa:
+    open-in-view: false
+    hibernate:
+      # 스키마는 Flyway 가 소유한다. Hibernate 는 절대 스키마를 바꾸지 않는다.
+      # 매핑 드리프트를 잡고 싶으면 JPA_DDL_AUTO=validate 로 올려 실행해 보면 된다.
+      ddl-auto: ${JPA_DDL_AUTO:none}
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+          lob:
+            non_contextual_creation: true
+        format_sql: true
+        # 부대 목록처럼 지연 로딩 컬렉션을 여러 건 순회할 때 N+1 을 IN 절 몇 번으로 줄인다.
+        default_batch_fetch_size: 50
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    schemas: public
+    baseline-on-migrate: true
+    baseline-version: 0
+
+  jackson:
+    # Jackson 3(Spring Boot 4) 기본값이 ISO-8601 문자열이라 별도 설정이 필요 없다.
+    # SerializationFeature.WRITE_DATES_AS_TIMESTAMPS 는 Jackson 3 에서 제거됐다.
+    default-property-inclusion: non_null
+
+  web:
+    error:
+      # always 로 두면 Jackson 파싱 오류 메시지에 요청 본문 조각(비밀번호 포함 가능)이
+      # 그대로 실려 나갈 수 있다. 사용자용 메시지는 GlobalExceptionHandler 가 만든다.
+      include-message: never
+
+  servlet:
+    multipart:
+      # MemberWeek 시트는 10KB 남짓이지만, 여러 주차를 합친 파일도 받을 수 있게 여유를 둔다.
+      max-file-size: 20MB
+      max-request-size: 24MB
+
+server:
+  port: ${SERVER_PORT:8080}
+
+app:
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173}
+  assets:
+    # 장수/ 전법/ 하위 폴더를 가진 원본 PNG 디렉터리
+    source-dir: ${ASSET_SOURCE_DIR:}
+    import-on-startup: ${ASSET_IMPORT_ON_STARTUP:false}
+  simulation:
+    max-iterations: ${SIMULATION_MAX_ITERATIONS:200000}
+    default-iterations: ${SIMULATION_DEFAULT_ITERATIONS:20000}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: when-authorized
+
+logging:
+  level:
+    com.smagukji.backend: ${LOG_LEVEL_APP:DEBUG}
+    org.hibernate.SQL: ${LOG_LEVEL_SQL:INFO}
