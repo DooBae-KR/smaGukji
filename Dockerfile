@@ -38,7 +38,11 @@ COPY backend/src ./src
 # 프론트 빌드 결과를 정적 자원으로 넣는다. (Gradle 의 -PbuildFrontend 는 쓰지 않는다)
 COPY --from=frontend /app/dist ./src/main/resources/static
 
-RUN ./gradlew bootJar --no-daemon -x test
+# 한 줄로 묶으면 실패했을 때 어느 단계인지 알 수 없다.
+# CI 로그를 인증 없이 읽을 수 없으므로, 실패 시 명령 이름만 보고 원인을 좁힐 수 있게 나눈다.
+RUN ./gradlew compileJava --no-daemon --stacktrace
+RUN ./gradlew processResources --no-daemon --stacktrace
+RUN ./gradlew bootJar --no-daemon -x test --stacktrace
 
 # ---------------------------------------------------------------
 # 3) 런타임
