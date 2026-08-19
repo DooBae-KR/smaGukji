@@ -66,8 +66,15 @@ public class HrMemberController {
                     "인사 관리 권한이 없습니다. 관리자 또는 간부진만 사용할 수 있습니다.");
         }
         UUID requested = directoryService.requireAlliance(server, alliance).getId();
-        if (actor.allianceId() == null || !actor.allianceId().equals(requested)) {
-            throw new AuthService.AuthFailedException("이 동맹에 접근할 권한이 없습니다.");
+
+        // 관리자는 시스템 전체를 보는 역할이라 동맹 제한을 받지 않는다.
+        // 간부진은 자기 동맹만 다룬다. 이 검사가 없으면 A동맹 간부가 파라미터만 바꿔
+        // B동맹 명부를 읽거나 시트를 덮어쓸 수 있다.
+        if (!actor.role().canManageSystem()) {
+            if (actor.allianceId() == null || !actor.allianceId().equals(requested)) {
+                throw new AuthService.AuthFailedException(
+                        "본인 소속 동맹만 관리할 수 있습니다.");
+            }
         }
         return new Scoped(actor, requested);
     }

@@ -156,6 +156,7 @@ export function AdminPanel({ onMenusChanged }: { onMenusChanged: () => void }) {
             <tr>
               <th>ID</th>
               <th>이름</th>
+              <th>동맹</th>
               <th>역할</th>
               <th>cid</th>
               <th>마지막 로그인</th>
@@ -167,6 +168,7 @@ export function AdminPanel({ onMenusChanged }: { onMenusChanged: () => void }) {
               <tr key={a.id}>
                 <td><code>{a.loginId}</code></td>
                 <td>{a.displayName}</td>
+                <td className="muted">{a.alliance ?? '—'}</td>
                 <td>
                   <div className="marker-buttons">
                     {ROLES.map((role) => {

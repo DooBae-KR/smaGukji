@@ -34,6 +34,8 @@ export function HrPage({
   const [selectedDate, setSelectedDate] = useState('')
   const [meta, setMeta] = useState<MarkerMeta[]>([])
   const [busyCid, setBusyCid] = useState<string | null>(null)
+  // 업로드 중 버튼을 잠근다. 두 번 눌리면 같은 주차가 동시에 들어와 409 가 난다.
+  const [uploading, setUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
   const [pendingCaution, setPendingCaution] = useState<MemberRow | null>(null)
@@ -104,6 +106,10 @@ export function HrPage({
     alliance: snapshot?.allianceName ?? alliance,
   })
 
+  /** 관리자만 동맹을 바꿔가며 볼 수 있다. */
+  const canPickAlliance = hr.can.manageSystem(session.role)
+  const lockedStyle = { opacity: 0.7, cursor: 'not-allowed' as const }
+
   const toggle = async (row: MemberRow, code: MarkerCode, next: boolean) => {
     // 사유가 필요한 마커를 «켤» 때만 모달을 띄운다. 끌 때는 사유가 필요 없다.
     const needsReason = meta.find((m) => m.code === code)?.requiresReason ?? false
@@ -128,14 +134,23 @@ export function HrPage({
   }
 
   const upload = async (file: File) => {
-    if (!server || !alliance) {
-      setError('서버와 동맹을 먼저 입력하세요.')
+    // 입력칸이 아니라 세션/스냅샷의 동맹으로 올린다.
+    // 입력칸 값을 쓰면 사용자가 고쳐놓은 다른 동맹으로 요청이 가서 거부당한다.
+    const s = scope()
+    if (!s.server || !s.alliance) {
+      setError('서버와 동맹을 먼저 확인하세요.')
       return
     }
+    if (uploading) {
+      return
+    }
+    setUploading(true)
     try {
-      const r: ImportResult = await hr.importSheet(server, alliance, file)
+      const r: ImportResult = await hr.importSheet(s.server, s.alliance, file)
       setNotice(
-        `${r.snapshotDate} 적재 완료 — 신규 ${r.inserted}, 갱신 ${r.updated}, 건너뜀 ${r.skipped}` +
+        `${r.snapshotDate} 적재 완료 — ${r.imported}명` +
+          (r.replaced > 0 ? ` (기존 ${r.replaced}명 교체)` : '') +
+          (r.skipped > 0 ? `, 건너뜀 ${r.skipped}` : '') +
           (r.errors.length ? ` / 오류 ${r.errors.length}건` : ''),
       )
       setError(r.errors.length ? r.errors.join('\n') : null)
@@ -143,6 +158,7 @@ export function HrPage({
     } catch (e) {
       setError((e as Error).message)
     } finally {
+      setUploading(false)
       if (fileRef.current) fileRef.current.value = ''
     }
   }
@@ -151,13 +167,30 @@ export function HrPage({
     <div>
       <div className="panel" style={{ marginBottom: 14 }}>
         <div className="toolbar" style={{ marginBottom: 0 }}>
+          {/*
+            관리자만 다른 동맹을 조회할 수 있다. 간부진은 자기 동맹으로 고정한다.
+            열어두면 세션의 동맹과 다른 값을 넣게 되고, 그 상태로 시트를 올리면
+            «본인 소속 동맹만 관리할 수 있습니다» 로 거부당한다.
+          */}
           <label>
             <span className="field-label">서버</span>
-            <input value={server} onChange={(e) => setServer(e.target.value)} style={{ width: 100 }} />
+            <input
+              value={server}
+              readOnly={!canPickAlliance}
+              title={canPickAlliance ? '' : '본인 소속 동맹으로 고정됩니다'}
+              onChange={(e) => canPickAlliance && setServer(e.target.value)}
+              style={{ width: 100, ...(canPickAlliance ? {} : lockedStyle) }}
+            />
           </label>
           <label>
             <span className="field-label">동맹</span>
-            <input value={alliance} onChange={(e) => setAlliance(e.target.value)} style={{ width: 150 }} />
+            <input
+              value={alliance}
+              readOnly={!canPickAlliance}
+              title={canPickAlliance ? '' : '본인 소속 동맹으로 고정됩니다'}
+              onChange={(e) => canPickAlliance && setAlliance(e.target.value)}
+              style={{ width: 150, ...(canPickAlliance ? {} : lockedStyle) }}
+            />
           </label>
           <label>
             <span className="field-label">주차</span>
@@ -193,12 +226,16 @@ export function HrPage({
               if (f) upload(f)
             }}
           />
-          <button onClick={() => fileRef.current?.click()} title="MemberWeek20260814.xlsx 형식">
-            시트 업로드
+          <button
+            onClick={() => fileRef.current?.click()}
+            disabled={uploading}
+            title="MemberWeek20260814.xlsx 형식 (파일명에서 기준일을 읽습니다)"
+          >
+            {uploading ? '업로드 중…' : '시트 업로드'}
           </button>
 
           <div className="spacer" />
-          <span className="muted">{session.displayName} ({session.role})</span>
+          <span className="muted">{session.displayName} ({hr.ROLE_LABEL[session.role]})</span>
           <button onClick={logout}>로그아웃</button>
         </div>
       </div>

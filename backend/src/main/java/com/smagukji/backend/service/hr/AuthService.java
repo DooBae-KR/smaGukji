@@ -27,11 +27,13 @@ import org.springframework.transaction.annotation.Transactional;
 /**
  * 인사팀 인증.
  *
- * <p>흐름은 사용자가 요청한 대로 2단계다.
- * <ol>
- *   <li>관리자 ID 입력 — 어느 동맹의 인사 화면인지 고르는 <b>게이트</b>. 이것만으로는 아무 데이터도 주지 않는다.</li>
- *   <li>동맹원 ID/PW 입력 — 실제 <b>인증</b>. 통과하면 세션 토큰을 발급하고 그때부터 동맹 정보를 볼 수 있다.</li>
- * </ol>
+ * <p>역할 3단계
+ * <ul>
+ *   <li>ADMIN 관리자 — 시스템 역할. 메뉴 권한과 전체 계정을 다루며 동맹 제한을 받지 않는다.
+ *       회원가입으로는 만들 수 없고 운영자가 직접 만든다.</li>
+ *   <li>OFFICER 간부진 — 자기 동맹의 인사 관리만. 동맹 개설자(첫 가입자)가 여기에 해당한다.</li>
+ *   <li>MEMBER 동맹원 — 시뮬레이션만.</li>
+ * </ul>
  *
  * <p>🔒 원칙
  * <ul>
@@ -104,10 +106,14 @@ public class AuthService {
      *
      * <p>역할은 자동으로 정해진다.
      * <ul>
-     *   <li>그 동맹의 <b>첫 가입자</b> → ADMIN. 동맹을 개설한 사람이므로 관리 권한을 갖는다.</li>
-     *   <li>이미 계정이 있는 동맹에 가입 → MEMBER. 모르는 사람이 남의 동맹 관리자가 되는 것을 막는다.</li>
+     *   <li>그 동맹의 <b>첫 가입자</b> → OFFICER(간부진). 동맹을 개설했으므로 인사 관리를 맡는다.</li>
+     *   <li>이미 계정이 있는 동맹에 가입 → MEMBER(동맹원). 시뮬레이션만 쓴다.</li>
      * </ul>
-     * 가입 즉시 로그인 상태가 되도록 세션을 함께 발급한다.
+     *
+     * <p><b>회원가입으로는 ADMIN 이 될 수 없다.</b> 관리자는 메뉴 권한과 전체 계정을 다루는
+     * 시스템 역할이라 아무나 가입해서 가져가면 안 된다. 관리자 계정은 운영자가 직접 만든다.
+     *
+     * <p>가입 즉시 로그인 상태가 되도록 세션을 함께 발급한다.
      */
     @Transactional
     public LoginResult register(String server, String allianceName, String loginId,
@@ -122,7 +128,7 @@ public class AuthService {
 
         boolean firstOfAlliance =
                 accountRepository.findAllByAllianceIdOrderByLoginIdAsc(alliance.getId()).isEmpty();
-        AccountRole role = firstOfAlliance ? AccountRole.ADMIN : AccountRole.MEMBER;
+        AccountRole role = firstOfAlliance ? AccountRole.OFFICER : AccountRole.MEMBER;
 
         AppAccount account = new AppAccount(alliance.getId(), loginId, hash(rawPassword),
                 role, displayName);
@@ -266,19 +272,22 @@ public class AuthService {
      * 동맹 범위를 확인하지 않으면 A동맹 관리자가 UUID 만 알아내 B동맹 계정을 지울 수 있다.
      */
     @Transactional
-    public void deleteAccount(UUID actorId, UUID actorAllianceId, UUID targetId) {
+    public void deleteAccount(UUID actorId, UUID actorAllianceId, UUID targetId, boolean systemWide) {
         if (actorId.equals(targetId)) {
             throw new IllegalArgumentException("자기 자신은 삭제할 수 없습니다.");
         }
         AppAccount target = accountRepository.findById(targetId)
                 .orElseThrow(() -> new ResourceNotFoundException("계정을 찾을 수 없습니다: " + targetId));
 
-        if (actorAllianceId == null || !actorAllianceId.equals(target.getAllianceId())) {
+        // 관리자는 시스템 전체 계정을 다루므로 동맹 제한을 받지 않는다.
+        if (!systemWide && (actorAllianceId == null
+                || !actorAllianceId.equals(target.getAllianceId()))) {
             throw new AuthFailedException("다른 동맹의 계정은 삭제할 수 없습니다.");
         }
 
-        if (target.getRole() == AccountRole.ADMIN && countAdminsOf(actorAllianceId) <= 1) {
-            throw new IllegalStateException("이 동맹의 마지막 관리자 계정은 삭제할 수 없습니다.");
+        if (target.getRole() == AccountRole.ADMIN
+                && accountRepository.countByRole(AccountRole.ADMIN) <= 1) {
+            throw new IllegalStateException("마지막 관리자 계정은 삭제할 수 없습니다.");
         }
 
         sessionRepository.deleteByAccountId(targetId);
@@ -288,16 +297,18 @@ public class AuthService {
 
     /** 역할 변경. 마지막 관리자의 강등을 막는다. */
     @Transactional
-    public void changeRole(UUID actorId, UUID actorAllianceId, UUID targetId, AccountRole newRole) {
+    public void changeRole(UUID actorId, UUID actorAllianceId, UUID targetId, AccountRole newRole,
+            boolean systemWide) {
         AppAccount target = accountRepository.findById(targetId)
                 .orElseThrow(() -> new ResourceNotFoundException("계정을 찾을 수 없습니다: " + targetId));
 
-        if (actorAllianceId == null || !actorAllianceId.equals(target.getAllianceId())) {
+        if (!systemWide && (actorAllianceId == null
+                || !actorAllianceId.equals(target.getAllianceId()))) {
             throw new AuthFailedException("다른 동맹의 계정은 변경할 수 없습니다.");
         }
         if (target.getRole() == AccountRole.ADMIN && newRole != AccountRole.ADMIN
-                && countAdminsOf(actorAllianceId) <= 1) {
-            throw new IllegalStateException("이 동맹의 마지막 관리자는 강등할 수 없습니다.");
+                && accountRepository.countByRole(AccountRole.ADMIN) <= 1) {
+            throw new IllegalStateException("마지막 관리자는 강등할 수 없습니다.");
         }
 
         target.setRole(newRole);
@@ -307,23 +318,33 @@ public class AuthService {
         log.info("역할 변경 targetId={} -> {} by actorId={}", targetId, newRole, actorId);
     }
 
-    private long countAdminsOf(UUID allianceId) {
-        return accountRepository.findAllByAllianceIdOrderByLoginIdAsc(allianceId).stream()
-                .filter(a -> a.getRole() == AccountRole.ADMIN)
-                .count();
+    /** 관리자는 시스템 전체 계정을, 그 외에는 자기 동맹 계정만 본다. */
+    @Transactional(readOnly = true)
+    public List<AccountSummary> listAccounts(UUID allianceId, boolean systemWide) {
+        List<AppAccount> accounts = systemWide
+                ? accountRepository.findAll()
+                : accountRepository.findAllByAllianceIdOrderByLoginIdAsc(allianceId);
+
+        return accounts.stream()
+                .sorted(java.util.Comparator.comparing(AppAccount::getLoginId))
+                .map(a -> new AccountSummary(a.getId(), a.getLoginId(), a.getDisplayName(),
+                        a.getRole().name(), a.getCid(), a.isActive(), a.getLastLoginAt(),
+                        allianceLabel(a.getAllianceId())))
+                .toList();
     }
 
-    @Transactional(readOnly = true)
-    public List<AccountSummary> listAccounts(UUID allianceId) {
-        return accountRepository.findAllByAllianceIdOrderByLoginIdAsc(allianceId).stream()
-                .map(a -> new AccountSummary(a.getId(), a.getLoginId(), a.getDisplayName(),
-                        a.getRole().name(), a.getCid(), a.isActive(), a.getLastLoginAt()))
-                .toList();
+    private String allianceLabel(UUID allianceId) {
+        if (allianceId == null) {
+            return null;
+        }
+        return allianceRepository.findById(allianceId)
+                .map(a -> a.getServer() + " · " + a.getName())
+                .orElse(null);
     }
 
     /** 계정 목록 응답. 비밀번호 해시는 절대 싣지 않는다. */
     public record AccountSummary(UUID id, String loginId, String displayName, String role,
-            String cid, boolean active, OffsetDateTime lastLoginAt) {
+            String cid, boolean active, OffsetDateTime lastLoginAt, String alliance) {
     }
 
     // ---------------------------------------------------------------

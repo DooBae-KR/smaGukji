@@ -44,8 +44,10 @@ export interface ImportResult {
   server: string
   allianceName: string
   snapshotDate: string
-  inserted: number
-  updated: number
+  /** 이번에 적재한 행 수 */
+  imported: number
+  /** 같은 주차에 있던 기존 행 중 교체된 수 */
+  replaced: number
   skipped: number
   errors: string[]
 }
@@ -112,6 +114,8 @@ export interface AccountSummary {
   cid?: string
   active: boolean
   lastLoginAt?: string
+  /** 관리자는 전체 동맹 계정을 보므로 어느 동맹인지 함께 표시한다. */
+  alliance?: string
 }
 
 // ---------------------------------------------------------------
@@ -150,7 +154,7 @@ function scope(server: string, alliance: string, extra: Record<string, string> =
 // 인증
 // ---------------------------------------------------------------
 
-/** 회원가입. 동맹 정보를 함께 넣으면 그 동맹이 만들어지고 첫 가입자는 관리자가 된다. */
+/** 회원가입. 동맹 정보를 함께 넣으면 그 동맹이 만들어지고 첫 가입자는 간부진이 된다. */
 export function register(body: {
   loginId: string
   password: string

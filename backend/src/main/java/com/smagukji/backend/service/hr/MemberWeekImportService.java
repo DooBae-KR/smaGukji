@@ -81,16 +81,16 @@ public class MemberWeekImportService {
      * 적재 결과.
      *
      * @param snapshotDate 파일명에서 추출한 기준일
-     * @param inserted     새로 추가된 행
-     * @param updated      기존 행을 덮어쓴 수
+     * @param imported     이번에 적재한 행 수
+     * @param replaced     같은 주차에 있던 기존 행 중 교체된 수
      * @param skipped      cid 가 비어 건너뛴 행
-     * @param errors       행 단위 오류
+     * @param errors       행 단위 파싱 오류 (DB 반영 전에 걸러진 것)
      */
     public record ImportResult(UUID allianceId, String server, String allianceName,
-            LocalDate snapshotDate, int inserted, int updated, int skipped, List<String> errors) {
+            LocalDate snapshotDate, int imported, int replaced, int skipped, List<String> errors) {
 
         public int total() {
-            return inserted + updated;
+            return imported;
         }
     }
 
@@ -130,11 +130,16 @@ public class MemberWeekImportService {
         Alliance alliance = allianceRepository.findById(allianceId)
                 .orElseThrow(() -> new IllegalArgumentException("동맹을 찾을 수 없습니다: " + allianceId));
 
-        int inserted = 0;
-        int updated = 0;
+        // 1단계 — 시트를 메모리에서 전부 파싱한다. 여기서는 DB 를 건드리지 않는다.
+        //
+        // 예전에는 행마다 DB 를 조회·저장하면서 예외를 잡아 넘겼는데, PostgreSQL 에서는
+        // 트랜잭션 안에서 SQL 이 한 번 실패하면 그 트랜잭션 전체가 죽는다(25P02).
+        // 그래서 첫 오류 이후의 모든 행이 줄줄이 실패하고, 커밋에서 UnexpectedRollbackException
+        // 이 터졌다. 파싱 오류와 DB 작업을 분리해야 «한 행이 이상해도 나머지는 들어간다»가 성립한다.
         int skipped = 0;
         List<String> errors = new ArrayList<>();
         Set<String> seenCids = new HashSet<>();
+        List<MemberWeek> parsed = new ArrayList<>();
 
         try (Workbook workbook = WorkbookFactory.create(input)) {
             Sheet sheet = workbook.getSheetAt(0);
@@ -175,41 +180,44 @@ public class MemberWeekImportService {
                 }
 
                 try {
-                    MemberWeek parsed = new MemberWeek(alliance.getId(), snapshotDate, cid,
+                    MemberWeek week = new MemberWeek(alliance.getId(), snapshotDate, cid,
                             text(row, columns.get("memberName"), formatter));
-                    parsed.setJob(nullIfBlank(text(row, columns.get("job"), formatter)));
-                    parsed.setTeamGroup(nullIfBlank(text(row, columns.get("teamGroup"), formatter)));
-                    parsed.setPosition(nullIfBlank(text(row, columns.get("position"), formatter)));
-                    parsed.setProsperity(number(row, columns.get("prosperity"), formatter));
-                    parsed.setWeeklyMerit(number(row, columns.get("weeklyMerit"), formatter));
-                    parsed.setWeeklyContribution(
+                    week.setJob(nullIfBlank(text(row, columns.get("job"), formatter)));
+                    week.setTeamGroup(nullIfBlank(text(row, columns.get("teamGroup"), formatter)));
+                    week.setPosition(nullIfBlank(text(row, columns.get("position"), formatter)));
+                    week.setProsperity(number(row, columns.get("prosperity"), formatter));
+                    week.setWeeklyMerit(number(row, columns.get("weeklyMerit"), formatter));
+                    week.setWeeklyContribution(
                             number(row, columns.get("weeklyContribution"), formatter));
-                    parsed.setGarrison(nullIfBlank(text(row, columns.get("garrison"), formatter)));
+                    week.setGarrison(nullIfBlank(text(row, columns.get("garrison"), formatter)));
                     Long siege = number(row, columns.get("weeklySiegeCount"), formatter);
-                    parsed.setWeeklySiegeCount(siege == null ? null : siege.intValue());
-                    parsed.setSourceFile(fileName);
-
-                    Optional<MemberWeek> existing = memberWeekRepository
-                            .findByAllianceIdAndSnapshotDateAndCid(alliance.getId(), snapshotDate, cid);
-                    if (existing.isPresent()) {
-                        existing.get().replaceWith(parsed);
-                        updated++;
-                    } else {
-                        memberWeekRepository.save(parsed);
-                        inserted++;
-                    }
+                    week.setWeeklySiegeCount(siege == null ? null : siege.intValue());
+                    week.setSourceFile(fileName);
+                    parsed.add(week);
                 } catch (RuntimeException e) {
+                    // 순수 파싱 오류다. DB 를 아직 건드리지 않았으므로 건너뛰어도 안전하다.
                     errors.add("%d행(cid %s): %s".formatted(r + 1, cid, e.getMessage()));
                 }
             }
         }
 
-        log.info("주차 시트 적재 - {}/{} {} : 신규 {}, 갱신 {}, 건너뜀 {}, 오류 {}",
+        // 2단계 — 그 주차를 통째로 교체한다.
+        //
+        // 시트가 해당 주차의 유일한 진실이므로 «재업로드 = 교체»가 맞다. 행마다 조회 후
+        // 삽입하면 (1) 같은 주차를 동시에 두 번 올릴 때 중복 키가 나고,
+        // (2) 시트에서 빠진 탈퇴자 행이 계속 남는다.
+        int replaced = memberWeekRepository.deleteByAllianceIdAndSnapshotDate(
+                alliance.getId(), snapshotDate);
+        // 삭제가 삽입보다 먼저 DB 에 닿아야 유니크 제약에 걸리지 않는다.
+        memberWeekRepository.flush();
+        memberWeekRepository.saveAll(parsed);
+
+        log.info("주차 시트 적재 - {}/{} {} : 적재 {}, 교체 {}, 건너뜀 {}, 파싱오류 {}",
                 alliance.getServer(), alliance.getName(), snapshotDate,
-                inserted, updated, skipped, errors.size());
+                parsed.size(), replaced, skipped, errors.size());
 
         return new ImportResult(alliance.getId(), alliance.getServer(), alliance.getName(),
-                snapshotDate, inserted, updated, skipped, errors);
+                snapshotDate, parsed.size(), replaced, skipped, errors);
     }
 
     // ---------------------------------------------------------------

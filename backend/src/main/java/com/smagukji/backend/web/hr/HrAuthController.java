@@ -52,7 +52,8 @@ public class HrAuthController {
 
     /**
      * 회원가입. 동맹 정보를 함께 입력받아 동맹을 만들거나 기존 동맹에 합류한다.
-     * 그 동맹의 첫 가입자는 관리자가 되고, 이후 가입자는 일반 멤버가 된다.
+     * 그 동맹의 첫 가입자는 <b>간부진</b>, 이후 가입자는 <b>동맹원</b>이 된다.
+     * 관리자는 회원가입으로 만들 수 없다.
      * 가입 즉시 로그인 상태가 되도록 토큰을 함께 발급한다.
      */
     @PostMapping("/register")
@@ -101,23 +102,18 @@ public class HrAuthController {
             @RequestHeader(value = TOKEN_HEADER, required = false) String token,
             @Valid @RequestBody CreateAccountRequest request) {
 
-        AuthenticatedAccount actor = authService.requireSession(token);
-        if (actor.role() != AccountRole.ADMIN) {
-            throw new AuthService.AuthFailedException("관리자만 계정을 만들 수 있습니다.");
-        }
-        if (actor.allianceId() == null) {
-            throw new AuthService.AuthFailedException("소속 동맹이 없는 관리자는 계정을 만들 수 없습니다.");
-        }
-        // 요청 본문의 allianceId 는 신뢰하지 않는다. 그대로 쓰면 A동맹 관리자가
-        // B동맹에 계정(심지어 ADMIN)을 심을 수 있다.
-        if (request.allianceId() != null && !request.allianceId().equals(actor.allianceId())) {
-            throw new AuthService.AuthFailedException("다른 동맹에는 계정을 만들 수 없습니다.");
+        // 관리자는 시스템 전체 역할이므로 어느 동맹에도 계정을 만들 수 있다.
+        // 지정하지 않으면 본인 동맹에 만든다.
+        AuthenticatedAccount actor = requireAdmin(token);
+        UUID allianceId = request.allianceId() != null ? request.allianceId() : actor.allianceId();
+        if (allianceId == null) {
+            throw new IllegalArgumentException("동맹을 지정해야 합니다.");
         }
 
         AccountRole role = request.role() == null ? AccountRole.MEMBER
                 : AccountRole.valueOf(request.role().toUpperCase(java.util.Locale.ROOT));
 
-        UUID id = authService.createAccount(actor.allianceId(), request.loginId(),
+        UUID id = authService.createAccount(allianceId, request.loginId(),
                 request.password(), role, request.displayName(), request.cid());
         return Map.of("accountId", id.toString(), "loginId", request.loginId());
     }
@@ -127,7 +123,8 @@ public class HrAuthController {
     public List<AuthService.AccountSummary> listAccounts(
             @RequestHeader(value = TOKEN_HEADER, required = false) String token) {
         AuthenticatedAccount actor = requireAdmin(token);
-        return authService.listAccounts(actor.allianceId());
+        // 관리자는 시스템 전체 계정을 본다.
+        return authService.listAccounts(actor.allianceId(), true);
     }
 
     @DeleteMapping("/accounts/{accountId}")
@@ -136,7 +133,7 @@ public class HrAuthController {
             @PathVariable UUID accountId) {
 
         AuthenticatedAccount actor = requireAdmin(token);
-        authService.deleteAccount(actor.accountId(), actor.allianceId(), accountId);
+        authService.deleteAccount(actor.accountId(), actor.allianceId(), accountId, true);
         return Map.of("status", "deleted");
     }
 
@@ -152,7 +149,7 @@ public class HrAuthController {
 
         AuthenticatedAccount actor = requireAdmin(token);
         AccountRole role = AccountRole.valueOf(request.role().trim().toUpperCase(java.util.Locale.ROOT));
-        authService.changeRole(actor.accountId(), actor.allianceId(), accountId, role);
+        authService.changeRole(actor.accountId(), actor.allianceId(), accountId, role, true);
         return Map.of("status", "changed", "role", role.name(),
                 "note", "해당 계정은 다시 로그인해야 새 권한이 적용됩니다.");
     }
