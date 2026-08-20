@@ -27,7 +27,10 @@ dependencies {
 	implementation("org.flywaydb:flyway-database-postgresql")
 	// MemberWeek*.xlsx 파싱
 	implementation("org.apache.poi:poi-ooxml:5.5.1")
-	// 비밀번호 해싱(BCrypt)만 사용한다. 전체 보안 스택은 아직 필요 없다.
+	// 로그인은 Supabase Auth 가 맡는다. 여기서는 그 토큰(ES256, JWKS 공개키)만 검증한다.
+	// 비밀값을 하나도 들고 있지 않아도 되는 것이 이 방식의 장점이다.
+	implementation("org.springframework.boot:spring-boot-starter-oauth2-resource-server")
+	// BCrypt. 옛 계정 테이블을 다루는 코드가 남아 있는 동안 필요하다.
 	implementation("org.springframework.security:spring-security-crypto")
 	developmentOnly("org.springframework.boot:spring-boot-devtools")
 	runtimeOnly("org.postgresql:postgresql")

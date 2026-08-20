@@ -48,9 +48,17 @@ services:
       - key: ASSET_IMPORT_ON_STARTUP
         value: "false"
 
-      # 프론트를 같은 서비스에서 서빙하므로 CORS 는 필요 없다.
+      # 로그인 검증에 쓰는 Supabase 주소. 공개 값이지만 프로젝트마다 달라 대시보드에서 넣는다.
+      # 비어 있으면 토큰을 검증할 수 없으므로 /api 가 전부 잠긴다(열린 채 도는 것보다 낫다).
+      - key: SUPABASE_URL
+        sync: false
+
+      # 프론트가 Netlify 로 분리돼 «다른 오리진» 이 됐다. 그 주소를 반드시 넣어야 한다.
+      #   예) https://smagukji.netlify.app
+      # 비워두면 브라우저가 모든 요청을 막는다. 와일드카드는 쓰지 않는다 —
+      # 아무 사이트나 사용자의 토큰으로 이 API 를 부를 수 있게 된다.
       - key: CORS_ALLOWED_ORIGINS
-        value: ""
+        sync: false
 
       # «데이터» 탭의 시트 불러오기 버튼이 쓰는 값.
       # 공개 시트 URL 이라 비밀값은 아니지만, 시트가 바뀔 수 있어 대시보드에서 넣는다.

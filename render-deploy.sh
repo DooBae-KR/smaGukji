@@ -56,6 +56,19 @@ if [ -z "$GENERAL_SHEET" ] || [ -z "$ROSTER_SHEET" ]; then
   echo "    GENERAL_SHEET_CSV_URL / ROSTER_SHEET_CSV_URL"
 fi
 
+# 로그인 검증에 쓰는 Supabase 주소. 없으면 토큰을 확인할 수 없어 /api 가 전부 잠긴다.
+SUPABASE_URL_VAL="$(val SUPABASE_URL)"
+[ -n "$SUPABASE_URL_VAL" ] || { echo "❌ .env 에 SUPABASE_URL 이 없습니다. 없으면 API 가 전부 401 이 됩니다." >&2; exit 1; }
+
+# 프론트가 Netlify 로 분리돼 다른 오리진이 됐다. 그 주소를 허용하지 않으면
+# 브라우저가 모든 요청을 막아 «아무것도 안 되는» 것처럼 보인다.
+CORS_VAL="$(val CORS_ALLOWED_ORIGINS)"
+if [ -z "$CORS_VAL" ] || [ "$CORS_VAL" = "http://localhost:5173" ]; then
+  echo "⚠️  CORS_ALLOWED_ORIGINS 가 로컬 주소뿐입니다."
+  echo "    Netlify 주소를 .env 에 추가하세요. 예)"
+  echo "    CORS_ALLOWED_ORIGINS=http://localhost:5173,https://smagukji.netlify.app"
+fi
+
 api() { # api METHOD PATH [BODY]
   local m="$1" p="$2" b="${3:-}"
   if [ -n "$b" ]; then
@@ -95,7 +108,8 @@ EXISTING=$(api GET "/services?name=$NAME&limit=1" | node -e "
 # ⚠️ node 에 값을 넘길 때는 반드시 «접두사» 형태(VAR=x node -e ...)를 써야 한다.
 #    node -e "..." VAR=x 는 환경변수가 아니라 argv 로 들어가서 process.env 가 비어버린다.
 ENVVARS=$(DB_URL="$DB_URL" DB_USER="$DB_USER" DB_PASS="$DB_PASS" \
-  GENERAL_SHEET="$GENERAL_SHEET" ROSTER_SHEET="$ROSTER_SHEET" node -e "
+  GENERAL_SHEET="$GENERAL_SHEET" ROSTER_SHEET="$ROSTER_SHEET" \
+  SUPABASE_URL_VAL="$SUPABASE_URL_VAL" CORS_VAL="$CORS_VAL" node -e "
   const e=[
     ['SPRING_PROFILES_ACTIVE','prod'],
     ['SUPABASE_DB_URL',process.env.DB_URL],
@@ -106,8 +120,11 @@ ENVVARS=$(DB_URL="$DB_URL" DB_USER="$DB_USER" DB_PASS="$DB_PASS" \
     ['DB_POOL_MIN_IDLE','1'],
     ['JPA_DDL_AUTO','none'],
     ['ASSET_IMPORT_ON_STARTUP','false'],
-    ['CORS_ALLOWED_ORIGINS',''],
     ['ASSET_SOURCE_DIR',''],
+    // 로그인 토큰(Supabase 발급)을 검증할 주소. 없으면 /api 가 전부 잠긴다.
+    ['SUPABASE_URL',process.env.SUPABASE_URL_VAL||''],
+    // Netlify 프론트는 다른 오리진이라 명시하지 않으면 브라우저가 막는다.
+    ['CORS_ALLOWED_ORIGINS',process.env.CORS_VAL||''],
     // 데이터 탭의 시트 불러오기 버튼이 쓰는 값. 공개 시트라 비밀값이 아니다.
     ['GENERAL_SHEET_CSV_URL',process.env.GENERAL_SHEET||''],
     ['ROSTER_SHEET_CSV_URL',process.env.ROSTER_SHEET||''],

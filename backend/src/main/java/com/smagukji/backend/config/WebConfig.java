@@ -1,14 +1,9 @@
 package com.smagukji.backend.config;
 
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.List;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.Resource;
-import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import org.springframework.web.servlet.resource.PathResourceResolver;
@@ -16,36 +11,14 @@ import org.springframework.web.servlet.resource.PathResourceResolver;
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
 
-    private static final Logger log = LoggerFactory.getLogger(WebConfig.class);
-
     /** SPA 폴백에서 제외할 접두사. 없는 API 는 200 이 아니라 404 여야 한다. */
     private static final List<String> NEVER_FORWARD = List.of("api/", "actuator/", "error");
 
-    private final String[] allowedOrigins;
-
-    public WebConfig(@Value("${app.cors.allowed-origins:}") String[] allowedOrigins) {
-        this.allowedOrigins = Arrays.stream(allowedOrigins)
-                .map(String::trim)
-                .filter(s -> !s.isEmpty())
-                .toArray(String[]::new);
-    }
-
-    @Override
-    public void addCorsMappings(CorsRegistry registry) {
-        if (allowedOrigins.length == 0) {
-            // 프론트엔드를 같은 JAR 에서 서빙하는 배포 형태면 CORS 자체가 필요 없다.
-            // 빈 값으로 매핑을 걸면 Spring 이 잘못된 오리진으로 보고 실패하므로 아예 등록하지 않는다.
-            log.info("CORS 미설정 — 같은 오리진에서만 API 를 호출할 수 있습니다.");
-            return;
-        }
-        log.info("CORS 허용 오리진: {}", String.join(", ", allowedOrigins));
-        registry.addMapping("/api/**")
-                .allowedOrigins(allowedOrigins)
-                .allowedMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
-                .allowedHeaders("*")
-                .exposedHeaders("ETag")
-                .maxAge(3600);
-    }
+    // CORS 는 SecurityConfig 가 맡는다.
+    //
+    // Spring Security 를 붙이면 그쪽 필터가 MVC 보다 먼저 돌기 때문에, 여기서
+    // addCorsMappings 로 걸어두면 예비 요청(OPTIONS)이 인증에 막혀 통째로 실패한다.
+    // 설정이 두 군데 흩어지는 것도 좋지 않아 SecurityConfig 의 CorsConfigurationSource 로 모았다.
 
     /**
      * SPA 폴백.

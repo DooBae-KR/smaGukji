@@ -75,6 +75,16 @@ app:
   security:
     # 인터넷에 노출한다면 8 이상으로 올리세요. 낮으면 기동 시 경고가 남습니다.
     min-password-length: ${APP_MIN_PASSWORD_LENGTH:4}
+    supabase:
+      # 로그인은 Supabase 가 하고, 여기서는 그 토큰만 검증한다.
+      #
+      # url 만 넣으면 나머지는 규칙대로 만들어 쓴다.
+      #   공개키  <url>/auth/v1/.well-known/jwks.json
+      #   발급자  <url>/auth/v1
+      # 둘 다 공개 값이라 비밀로 다룰 필요가 없다.
+      #
+      # 비워두면 /api 전체가 잠긴다. 설정을 빠뜨린 채 열려 있는 것보다 낫다.
+      url: ${SUPABASE_URL:}
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173}
   assets:
