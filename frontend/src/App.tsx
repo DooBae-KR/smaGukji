@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import './App.css'
+import { onServerWaking } from './api/client'
  import * as hr from './api/hr'
 import { ROLE_LABEL, can } from './api/hr'
 import type { LoginResult, MenuItem } from './api/hr'
@@ -29,6 +30,11 @@ export default function App() {
   // 이제 로그인과 인사 데이터는 항상 켜져 있는 Supabase 로 가므로 기다릴 일이 없다.
   // Render 는 «덱 분석» 을 누른 순간에만 필요하고, 그 대기는 해당 화면 안에서 보여준다.
   const [restoring, setRestoring] = useState(true)
+
+  // 시뮬레이션·시트 파싱은 Render 에 남아 있고, 잠들어 있으면 첫 요청이 수십 초 걸린다.
+  // 화면은 이미 떠 있으므로 «멈춘» 것처럼 보이지 않게 무슨 일이 벌어지는지만 알려준다.
+  const [waking, setWaking] = useState(false)
+  useEffect(() => onServerWaking(setWaking), [])
 
   useEffect(() => {
     let cancelled = false
@@ -118,6 +124,13 @@ export default function App() {
           <button onClick={logout}>로그아웃</button>
         </div>
       </header>
+
+      {waking && (
+        <div className="notice">
+          ⏳ 잠들어 있던 분석 서버를 깨우는 중입니다. 처음 한 번만 1분 정도 걸립니다.
+          <span className="muted"> (화면과 인사 데이터는 그대로 쓸 수 있습니다)</span>
+        </div>
+      )}
 
       {error && <div className="error-box">{error}</div>}
 
