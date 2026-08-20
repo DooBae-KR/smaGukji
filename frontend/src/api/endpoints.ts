@@ -1,4 +1,4 @@
-import { request } from './client'
+import { API_BASE, request } from './client'
 import type {
   AssetImportResult,
   Completeness,
@@ -85,4 +85,40 @@ export function importAssets(): Promise<AssetImportResult> {
 
 export function assetCount(): Promise<Record<string, number>> {
   return request<Record<string, number>>('/assets/count')
+}
+
+// --- 스프레드시트 동기화 ---
+
+export interface SheetSyncResult {
+  roster: {
+    sheetGenerals: number
+    sheetTactics: number
+    createdTactics: string[]
+    missingGenerals: string[]
+    extraTactics: string[]
+    extraGenerals: string[]
+  }
+  general: {
+    sheetRows: number
+    updated: number
+    notFound: string[]
+    skipped: string[]
+  }
+  /** 사람이 확인해야 할 것들 (시트 오타·명단 불일치) */
+  warnings: string[]
+}
+
+/** 구글 시트에서 장수·전법 데이터를 한 번에 불러온다. */
+export function syncSheets(): Promise<SheetSyncResult> {
+  return request<SheetSyncResult>('/sheets/sync', { method: 'POST' })
+}
+
+/** 백엔드가 깨어 있는지 확인. 로딩 화면에서 사용. */
+export async function ping(): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_BASE.replace(/\/api$/, '')}/actuator/health`)
+    return res.ok
+  } catch {
+    return false
+  }
 }

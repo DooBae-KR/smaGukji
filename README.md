@@ -98,6 +98,11 @@ Flyway가 소유합니다 (`backend/src/main/resources/db/migration`). Hibernate
 | `V9__menu_item` | `menu_item` (화면 메뉴 노출 제어) |
 | `V10__role_and_menu_permission` | 역할 3단계(ADMIN/OFFICER/MEMBER) + `menu_item.allowed_roles` |
 | `V11__tighten_default_menu_roles` | 기본 메뉴 권한 보정 |
+| `V12__general_classification_rework` | 진영·성향(복수)·병종 교체, 수치를 50렙 소수값으로 |
+| `V13__seed_general_classification` | 시트 스냅샷 (지금은 동기화 API 로 대체) |
+| `V14__reset_stale_general_snapshot` | V13 이 편집 중 시트를 찍어 생긴 잘못된 값 되돌림 |
+| `V15`·`V16` | 성향·전법 특성에 «문무» 추가 |
+| `V17__remove_typo_tactic` | 시트 오타로 생긴 중복 전법 제거 |
 
 모든 테이블에 RLS가 켜져 있고 정책은 없습니다. 백엔드는 테이블 소유자인 `postgres` 역할로
 접속해 RLS의 영향을 받지 않고, PostgREST(anon/authenticated)는 전부 차단됩니다.
@@ -119,8 +124,9 @@ Flyway가 소유합니다 (`backend/src/main/resources/db/migration`). Hibernate
 | 장수 이름 (54) | ✅ | 카드 이미지 파일명 |
 | 장수 세력 | ✅ | 카드 이미지 좌상단 배지 판독 |
 | 장수 코스트 | ✅ 전원 5.0 | 카드 이미지 하단 판독 |
-| 장수 병종 | ❌ 미입력 | 카드 아이콘이 20px 남짓이라 판독 불가 |
-| 장수 수치 | ❌ 미입력 | 카드 이미지에 없음 |
+| 장수 진영·성향·병종 | ⚠️ 일부 | 구글 시트 «무장» 탭 (채워진 장수만) |
+| 장수 수치(무력·지력·통솔·선공) | ⚠️ 일부 | 같은 시트, 50렙 기준 |
+| 장수 고유전법 | ⚠️ 일부 | 같은 시트 |
 | 전법 이름 (77) | ✅ | 카드 이미지 파일명 |
 | 전법 상세 | ❌ 미입력 | 카드 이미지에 없음 |
 | 카드 이미지 (131) | ✅ | `asset_image` 테이블 (`bytea`, 약 14MB) |
@@ -129,6 +135,25 @@ Flyway가 소유합니다 (`backend/src/main/resources/db/migration`). Hibernate
 조용히 잘못되기 때문입니다. 분석 API는 미입력을 "모름"으로 처리하고 `confidence` 로 알립니다.
 
 ### 데이터 채우기
+
+#### 시트에서 불러오기 (권장)
+
+«데이터» 탭의 **📥 시트에서 장수·전법 불러오기** 버튼을 누르면 구글 시트 두 개를 읽어 채웁니다.
+시트를 고친 뒤 아무 때나 다시 눌러도 안전합니다.
+
+| 시트 | 역할 | 환경변수 |
+|---|---|---|
+| 무장 | 진영·성향·병종·수치·고유전법 | `GENERAL_SHEET_CSV_URL` |
+| 이름 마스터 | 장수·전법 이름 대조 | `ROSTER_SHEET_CSV_URL` |
+
+동기화 규칙 — **추측하지 않습니다.**
+
+- 이름이 이미 있는 장수만 갱신합니다. 시트에만 있는 이름으로 장수를 만들지 않습니다(세력·코스트를 모르고, 카드 이미지도 없습니다).
+- 매핑표에 없는 분류 값을 만나면 그 행을 통째로 건너뛰고 무엇이 걸렸는지 알려줍니다.
+- 기존 이름과 **한 글자만 다른** 전법은 오타로 보고 만들지 않습니다.
+- 시트가 계속 바뀌므로 마이그레이션에 스냅샷을 굽지 않습니다. V13 이 편집 중 시트를 찍어 잘못된 값이 들어간 적이 있습니다(V14 로 되돌림).
+
+#### CSV로 직접 넣기
 
 프론트엔드 **«데이터»** 탭 또는 CSV API를 사용합니다.
 
@@ -164,17 +189,22 @@ name,category,abilityType,quality,triggerRate,targetCount,source,roleTags,effect
 | `GET` | `/api/assets/{category}/{name}/image` | 카드 이미지 (ETag + 30일 캐시) |
 | `POST` | `/api/assets/import` | 로컬 폴더에서 이미지 재적재 (sha256 비교, 멱등) |
 | `GET` | `/api/agent/teams` | AI 오피스 4개 팀 + 직원 + 대사 |
+| `POST` | `/api/sheets/sync` | **구글 시트에서 장수·전법 한 번에 불러오기** |
+| `POST` | `/api/generals/sync-sheet` | 무장 시트만 동기화 |
+| `GET` | `/api/generals/sheet-vocabulary` | 시트에 쓸 수 있는 분류 값 |
 
 ### 인사팀 (`X-Session-Token` 헤더 필요 — 표시된 것 제외)
 
 | 메서드 | 경로 | 설명 |
 |---|---|---|
-| `GET` | `/api/hr/auth/bootstrap-status` | 관리자 계정 존재 여부 *(인증 불필요)* |
-| `POST` | `/api/hr/auth/bootstrap` | 최초 관리자 생성 *(관리자 0명일 때만)* |
-| `POST` | `/api/hr/auth/admin-gate` | 1단계 관리자 ID 확인 *(인증 불필요, 동맹명만 반환)* |
-| `POST` | `/api/hr/auth/login` | 2단계 동맹원 ID/PW 인증 → 토큰 |
-| `POST` | `/api/hr/auth/admin-login` | 관리자 로그인 → 토큰 |
-| `POST` | `/api/hr/auth/accounts` | 계정 생성 *(ADMIN 전용)* |
+| `POST` | `/api/hr/auth/register` | 회원가입 *(인증 불필요)* → 토큰 |
+| `POST` | `/api/hr/auth/login` | ID/PW 로그인 *(인증 불필요)* → 토큰 |
+| `GET` | `/api/hr/auth/me` | 현재 세션 정보 |
+| `POST` | `/api/hr/auth/password` | 본인 비밀번호 변경 |
+| `GET`·`POST` | `/api/hr/auth/accounts` | 계정 목록·생성 *(ADMIN)* |
+| `PATCH` | `/api/hr/auth/accounts/{id}/role` | 역할 변경 *(ADMIN)* |
+| `DELETE` | `/api/hr/auth/accounts/{id}` | 계정 삭제 *(ADMIN)* |
+| `GET`·`PATCH` | `/api/menus` · `/api/menus/{code}` | 메뉴 조회 · 권한 변경 *(PATCH 는 ADMIN)* |
 | `GET` | `/api/hr/members?server=&alliance=&snapshotDate=` | 그리드 조회 |
 | `POST` | `/api/hr/members/import?server=&alliance=` | 시트 업로드 (multipart) |
 | `GET` | `/api/hr/markers/meta` | 마커 코드·라벨·색 *(인증 불필요)* |
@@ -182,6 +212,7 @@ name,category,abilityType,quality,triggerRate,targetCount,source,roleTags,effect
 | `GET` | `/api/hr/cautions?server=&alliance=&q=&onlyOpen=` | 주의 목록 · 검색 |
 | `POST` | `/api/hr/cautions?server=&alliance=` | 주의 사유 추가 |
 | `POST` | `/api/hr/cautions/{id}/resolve` | 주의 해제 (기록은 유지) |
+| `DELETE` | `/api/hr/cautions/{id}` | 주의 사유 완전 삭제 |
 
 ## 인사팀 — 동맹원 관리
 
@@ -191,8 +222,9 @@ name,category,abilityType,quality,triggerRate,targetCount,source,roleTags,effect
 
 **회원가입** 시 서버와 동맹 이름을 함께 입력합니다.
 
-- 처음 등록하는 동맹 → 가입자가 그 동맹의 **관리자**가 됩니다.
-- 이미 등록된 동맹 → **동맹원**으로 합류합니다. (모르는 사람이 남의 동맹 관리자가 되는 것을 막습니다)
+- 처음 등록하는 동맹 → 가입자가 그 동맹의 **간부진**이 됩니다.
+- 이미 등록된 동맹 → **동맹원**으로 합류합니다.
+- **회원가입으로는 관리자가 될 수 없습니다.** 관리자는 시스템 역할이라 운영자가 직접 만듭니다.
 
 이후 역할 변경은 관리자가 «관리자» 화면에서 합니다.
 

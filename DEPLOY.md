@@ -123,6 +123,8 @@ java -jar build/libs/backend-0.0.1-SNAPSHOT.jar
 | `CORS_ALLOWED_ORIGINS` | | (prod에선 비움) | 프론트를 별도 도메인에 둘 때만 |
 | `DB_POOL_MAX_SIZE` | | `5` | 512MB 인스턴스면 `3` |
 | `PORT` / `SERVER_PORT` | | `8080` | 플랫폼이 주입하기도 합니다 |
+| `GENERAL_SHEET_CSV_URL` | | | 무장 분류 시트(CSV export). «데이터» 탭 불러오기 버튼용 |
+| `ROSTER_SHEET_CSV_URL` | | | 장수·전법 이름 마스터 시트(CSV export) |
 
 > ⚠️ **비밀값을 `render.yaml` / `fly.toml` / `Dockerfile` 에 넣지 마세요.** 전부 커밋되는 파일입니다.
 > `.dockerignore` 가 `.env` 를 이미지에서 제외합니다.

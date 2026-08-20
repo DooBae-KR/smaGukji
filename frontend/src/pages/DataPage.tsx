@@ -3,9 +3,11 @@ import {
   assetCount,
   importGeneralsCsv,
   importTacticsCsv,
+  syncSheets,
   tacticCompleteness,
 } from '../api/endpoints'
-import type { Completeness } from '../api/types'
+import type { SheetSyncResult } from '../api/endpoints'
+ import type { Completeness } from '../api/types'
 
 const TACTIC_HEADER =
   'name,category,abilityType,quality,triggerRate,targetCount,source,roleTags,effectText'
@@ -30,6 +32,8 @@ export function DataPage() {
   const [result, setResult] = useState<ImportResult | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  const [sync, setSync] = useState<SheetSyncResult | null>(null)
+  const [syncing, setSyncing] = useState(false)
 
   const refresh = () => {
     tacticCompleteness().then(setCompleteness).catch((e) => setError(e.message))
@@ -37,6 +41,20 @@ export function DataPage() {
   }
 
   useEffect(refresh, [])
+
+  /** 시트를 다시 읽어 장수·전법을 채운다. 여러 번 눌러도 안전하다. */
+  const runSync = async () => {
+    setSyncing(true)
+    setError(null)
+    try {
+      setSync(await syncSheets())
+      refresh()
+    } catch (e) {
+      setError((e as Error).message)
+    } finally {
+      setSyncing(false)
+    }
+  }
 
   const run = async (fn: () => Promise<ImportResult>) => {
     setBusy(true)
@@ -56,10 +74,75 @@ export function DataPage() {
       <h2>데이터 입력</h2>
 
       <div className="notice">
-        <strong>왜 비어 있나요?</strong> 장수 이름·세력·코스트는 카드 이미지에서 읽어 채웠지만,
-        전법 상세(분류·발동확률·효과)와 장수 병종은 이미지에 없거나 판독이 불가능해 비워두었습니다.
-        추측으로 채우면 분석 결과가 그럴듯하게 틀리기 때문에 일부러 넣지 않았습니다.
-        아래 CSV로 채우면 그때부터 발동 시뮬레이션이 동작합니다.
+        <strong>구글 시트에서 바로 불러오기</strong>
+        <br />
+        스프레드시트의 «무장» 시트와 «이름 마스터» 시트를 읽어 장수·전법 데이터를 채웁니다.
+        시트를 고친 뒤 아무 때나 다시 눌러도 안전합니다.
+        <br />
+        <span className="muted">
+          이름이 이미 있는 장수만 갱신하고, 모르는 분류 값을 만나면 그 행을 건너뛰고 알려줍니다.
+          추측으로 채우지 않습니다.
+        </span>
+      </div>
+
+      <div className="toolbar">
+        <button className="primary" disabled={syncing} onClick={runSync}>
+          {syncing ? '불러오는 중…' : '📥 시트에서 장수·전법 불러오기'}
+        </button>
+        {sync && (
+          <span className="muted">
+            장수 {sync.general.updated}명 갱신 · 전법 신규 {sync.roster.createdTactics.length}개
+          </span>
+        )}
+      </div>
+
+      {sync && (
+        <div className="panel" style={{ background: 'var(--bg-panel-2)', marginBottom: 14 }}>
+          <div className="stat-grid">
+            <div className="stat">
+              <div className="k">무장 시트</div>
+              <div className="v">{sync.general.sheetRows}행</div>
+            </div>
+            <div className="stat">
+              <div className="k">장수 갱신</div>
+              <div className="v">{sync.general.updated}명</div>
+            </div>
+            <div className="stat">
+              <div className="k">마스터 목록</div>
+              <div className="v">
+                장수 {sync.roster.sheetGenerals} · 전법 {sync.roster.sheetTactics}
+              </div>
+            </div>
+            <div className="stat">
+              <div className="k">전법 신규 생성</div>
+              <div className="v">{sync.roster.createdTactics.length}개</div>
+            </div>
+          </div>
+
+          {sync.warnings.length > 0 && (
+            <>
+              <h3>확인이 필요한 항목</h3>
+              <ul className="findings">
+                {sync.warnings.map((w, i) => (
+                  <li key={i} className="WARN">
+                    <span className="sev">주의</span>
+                    <span>{w}</span>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+          {sync.warnings.length === 0 && (
+            <p className="muted">모든 행이 정상 반영되었습니다.</p>
+          )}
+        </div>
+      )}
+
+      <div className="notice">
+        <strong>CSV로 직접 채우기</strong>
+        <br />
+        시트에 없는 값은 아래 CSV로 넣을 수 있습니다. 전법 상세(분류·발동확률·효과)가
+        채워져야 발동 시뮬레이션이 동작합니다.
       </div>
 
       {error && <div className="error-box">{error}</div>}

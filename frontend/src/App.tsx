@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useState } from 'react'
 import './App.css'
-import * as hr from './api/hr'
+import { ping } from './api/endpoints'
+ import * as hr from './api/hr'
 import { ROLE_LABEL, can } from './api/hr'
 import type { LoginResult, MenuItem } from './api/hr'
-import { AdminPanel } from './pages/AdminPanel'
+import { LoadingScreen } from './components/LoadingScreen'
+ import { AdminPanel } from './pages/AdminPanel'
 import { AgentPage } from './pages/AgentPage'
 import { BuilderPage } from './pages/BuilderPage'
 import { CatalogPage } from './pages/CatalogPage'
@@ -16,11 +18,56 @@ import { StrategyPage } from './pages/StrategyPage'
 /** 관리자 화면은 DB 메뉴가 아니라 세션 역할로만 붙는다. */
 const ADMIN_ROUTE = '/admin'
 
+/** 백엔드가 깰 때까지 기다리는 최대 시간. Render 무료 플랜 콜드 스타트가 1분 남짓이다. */
+const BOOT_TIMEOUT_SECONDS = 90
+
 export default function App() {
   const [session, setSession] = useState<LoginResult | null>(null)
   const [menus, setMenus] = useState<MenuItem[]>([])
   const [route, setRoute] = useState('')
   const [error, setError] = useState<string | null>(null)
+
+  // 부팅 상태. 백엔드가 응답할 때까지 로딩 화면을 보여준다.
+  const [booted, setBooted] = useState(false)
+  const [bootError, setBootError] = useState<string | null>(null)
+  const [elapsed, setElapsed] = useState(0)
+  const [bootAttempt, setBootAttempt] = useState(0)
+
+  useEffect(() => {
+    let cancelled = false
+    setBooted(false)
+    setBootError(null)
+    setElapsed(0)
+
+    const startedAt = Date.now()
+    const ticker = window.setInterval(() => {
+      if (!cancelled) setElapsed(Math.floor((Date.now() - startedAt) / 1000))
+    }, 1000)
+
+    const wait = async () => {
+      // 잠든 서버가 깨어날 때까지 재시도한다. 한 번 실패했다고 포기하면
+      // 무료 플랜에서는 사실상 항상 오류 화면이 뜬다.
+      while (!cancelled) {
+        if (await ping()) {
+          if (!cancelled) setBooted(true)
+          return
+        }
+        if ((Date.now() - startedAt) / 1000 > BOOT_TIMEOUT_SECONDS) {
+          if (!cancelled) {
+            setBootError(`${BOOT_TIMEOUT_SECONDS}초 동안 응답이 없습니다. 서버가 내려가 있을 수 있습니다.`)
+          }
+          return
+        }
+        await new Promise((r) => setTimeout(r, 2000))
+      }
+    }
+    wait()
+
+    return () => {
+      cancelled = true
+      window.clearInterval(ticker)
+    }
+  }, [bootAttempt])
 
   const role = session?.role
   const isAdmin = can.manageSystem(role)
@@ -50,6 +97,19 @@ export default function App() {
     await hr.logout().catch(() => undefined)
     hr.clearToken()
     setSession(null)
+  }
+
+  // 백엔드가 깨어나기 전에는 로딩 화면만 보여준다.
+  // 이게 없으면 콜드 스타트 동안 로그인 화면이 뜬 채로 모든 요청이 실패해
+  // 사용자는 앱이 고장난 줄 안다.
+  if (!booted) {
+    return (
+      <LoadingScreen
+        elapsedSeconds={elapsed}
+        error={bootError}
+        onRetry={() => setBootAttempt((n) => n + 1)}
+      />
+    )
   }
 
   // 로그인 전에는 다른 화면을 아예 만들지 않는다.

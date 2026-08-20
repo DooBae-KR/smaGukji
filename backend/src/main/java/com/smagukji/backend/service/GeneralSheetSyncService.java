@@ -96,9 +96,14 @@ public class GeneralSheetSyncService {
     private static final int COL_LEADERSHIP = 13;
     private static final int COL_INITIATIVE = 14;
 
+    // 마스터 목록 시트(구분/이름/이미지)의 열 위치
+    private static final int COL_ROSTER_KIND = 0;
+    private static final int COL_ROSTER_NAME = 1;
+
     private final GeneralRepository generalRepository;
     private final TacticRepository tacticRepository;
     private final String sheetUrl;
+    private final String rosterUrl;
 
     private final HttpClient http = HttpClient.newBuilder()
             .followRedirects(HttpClient.Redirect.NORMAL)
@@ -107,10 +112,12 @@ public class GeneralSheetSyncService {
 
     public GeneralSheetSyncService(GeneralRepository generalRepository,
             TacticRepository tacticRepository,
-            @Value("${app.sheet.general-csv-url:}") String sheetUrl) {
+            @Value("${app.sheet.general-csv-url:}") String sheetUrl,
+            @Value("${app.sheet.roster-csv-url:}") String rosterUrl) {
         this.generalRepository = generalRepository;
         this.tacticRepository = tacticRepository;
         this.sheetUrl = sheetUrl;
+        this.rosterUrl = rosterUrl;
     }
 
     /**
@@ -263,6 +270,138 @@ public class GeneralSheetSyncService {
         }
     }
 
+    // ---------------------------------------------------------------
+    // 마스터 목록 시트 (구분 / 이름 / 이미지)
+    // ---------------------------------------------------------------
+
+    /**
+     * 이름 대조 결과.
+     *
+     * @param createdTactics  시트에만 있어 새로 만든 전법
+     * @param missingGenerals 시트에만 있는 장수. 세력·코스트를 모르므로 만들지 않고 알리기만 한다
+     * @param extraTactics    DB 에만 있는 전법(고유전법 등). 지우지 않는다
+     * @param extraGenerals   DB 에만 있는 장수
+     */
+    public record RosterResult(int sheetGenerals, int sheetTactics,
+            List<String> createdTactics, List<String> suspectedTypos,
+            List<String> missingGenerals,
+            List<String> extraTactics, List<String> extraGenerals) {
+    }
+
+    /**
+     * 마스터 목록 시트와 DB 의 이름을 맞춘다.
+     *
+     * <p>전법은 이름만 있으면 성립하므로 없는 것을 만든다. 장수는 세력·코스트가 필수인데
+     * 이 시트에 없으므로 만들지 않고 보고만 한다. 없는 값을 지어내면 카드 이미지도 없는
+     * 유령 장수가 생긴다.
+     *
+     * <p>DB 에만 있는 항목은 지우지 않는다. 고유전법처럼 다른 경로로 들어온 정상 데이터이거나,
+     * 시트 쪽 오타일 수 있기 때문이다.
+     */
+    @Transactional
+    public RosterResult syncRoster() throws IOException, InterruptedException {
+        if (rosterUrl == null || rosterUrl.isBlank()) {
+            throw new IllegalStateException(
+                    "app.sheet.roster-csv-url (환경변수 ROSTER_SHEET_CSV_URL) 이 설정되지 않았습니다.");
+        }
+
+        List<List<String>> rows = CsvReader.parseRows(fetch(rosterUrl));
+        List<String> sheetGenerals = new ArrayList<>();
+        List<String> sheetTactics = new ArrayList<>();
+
+        for (int i = 1; i < rows.size(); i++) {
+            List<String> row = rows.get(i);
+            String kind = cell(row, COL_ROSTER_KIND);
+            String name = cell(row, COL_ROSTER_NAME);
+            if (name.isEmpty()) {
+                continue;
+            }
+            if ("장수".equals(kind)) {
+                sheetGenerals.add(name);
+            } else if ("전법".equals(kind)) {
+                sheetTactics.add(name);
+            }
+        }
+
+        // 새 전법을 만들기 전에 «오타로 보이는 이름»을 걸러낸다.
+        // 실제로 시트의 «결사닁 다짐»(오타)이 «결사의 다짐» 옆에 하나 더 생긴 적이 있다.
+        // 한 글자만 다른 이름은 새 전법이 아니라 오타일 가능성이 훨씬 높다.
+        List<String> existing = tacticRepository.findAll().stream().map(Tactic::getName).toList();
+
+        List<String> created = new ArrayList<>();
+        List<String> suspectedTypos = new ArrayList<>();
+        for (String name : sheetTactics) {
+            if (tacticRepository.findByName(name).isPresent()) {
+                continue;
+            }
+            String near = nearDuplicate(name, existing);
+            if (near != null) {
+                suspectedTypos.add("\"%s\" ← \"%s\" 의 오타로 보여 만들지 않았습니다".formatted(name, near));
+                continue;
+            }
+            tacticRepository.save(new Tactic(name));
+            created.add(name);
+        }
+
+        List<String> missingGenerals = sheetGenerals.stream()
+                .filter(n -> generalRepository.findByName(n).isEmpty())
+                .toList();
+
+        List<String> extraGenerals = generalRepository.findAll().stream()
+                .map(General::getName)
+                .filter(n -> !sheetGenerals.contains(n))
+                .sorted()
+                .toList();
+
+        List<String> extraTactics = tacticRepository.findAll().stream()
+                .map(Tactic::getName)
+                .filter(n -> !sheetTactics.contains(n))
+                .sorted()
+                .toList();
+
+        log.info("마스터 목록 대조 - 시트 장수 {} 전법 {} / 전법 신규 {} / 장수 누락 {}",
+                sheetGenerals.size(), sheetTactics.size(), created.size(), missingGenerals.size());
+
+        return new RosterResult(sheetGenerals.size(), sheetTactics.size(),
+                created, suspectedTypos, missingGenerals, extraTactics, extraGenerals);
+    }
+
+    /**
+     * 기존 이름 중 «한 글자만 다른» 것을 찾는다. 있으면 새 항목이 아니라 오타로 본다.
+     *
+     * @return 비슷한 기존 이름, 없으면 null
+     */
+    private static String nearDuplicate(String name, List<String> existing) {
+        for (String other : existing) {
+            if (other.length() == name.length() && differsByOneChar(name, other)) {
+                return other;
+            }
+        }
+        return null;
+    }
+
+    private static boolean differsByOneChar(String a, String b) {
+        int diff = 0;
+        for (int i = 0; i < a.length(); i++) {
+            if (a.charAt(i) != b.charAt(i) && ++diff > 1) {
+                return false;
+            }
+        }
+        return diff == 1;
+    }
+
+    private String fetch(String url) throws IOException, InterruptedException {
+        HttpResponse<String> res = http.send(
+                HttpRequest.newBuilder(URI.create(url))
+                        .timeout(Duration.ofSeconds(30))
+                        .GET().build(),
+                HttpResponse.BodyHandlers.ofString());
+        if (res.statusCode() != 200) {
+            throw new IllegalStateException(
+                    "시트를 받지 못했습니다 (HTTP %d). 공개 설정을 확인하세요.".formatted(res.statusCode()));
+        }
+        return res.body();
+    }
     /** 매핑표에 어떤 값이 있는지 화면에 보여주기 위한 목록. */
     public Map<String, List<String>> vocabulary() {
         return Map.of(
