@@ -4,7 +4,8 @@ import { assetImageUrl } from '../api/client'
 import { EMPTY_OWNED, loadOwned } from '../api/collection'
 import type { CardKind, OwnedCards } from '../api/collection'
 import type { General, Tactic, TeamAnalysis, TeamRequest } from '../api/types'
-import type { CardItem } from '../components/CardGrid'
+import { seasonTag } from "../api/labels"
+import type { CardItem } from "../components/CardGrid"
 import { AnalysisPanel } from '../components/AnalysisPanel'
 import { CardPickerModal } from './CardPickerModal'
 import { CollectionModal } from './CollectionModal'
@@ -121,7 +122,7 @@ export function BuilderPage() {
       return generals.map((g) => ({
         id: g.id,
         name: g.name,
-        sub: [g.factionLabel, g.unitTypeLabel].filter(Boolean).join(' · '),
+        sub: [seasonTag(g.season), g.factionLabel, g.unitTypeLabel].filter(Boolean).join(" · "),
         disabled: usedGenerals.has(g.name) && g.name !== slot.generalName,
         title: usedGenerals.has(g.name) && g.name !== slot.generalName
           ? '다른 칸에 이미 배치된 장수입니다'
@@ -134,7 +135,7 @@ export function BuilderPage() {
       return {
         id: t.id,
         name: t.name,
-        sub: t.categoryLabel ?? (t.dataComplete ? undefined : '상세 미입력'),
+        sub: [seasonTag(t.season), t.categoryLabel ?? (t.dataComplete ? null : "상세 미입력")].filter(Boolean).join(" · ") || undefined,
         disabled: takenHere,
         title: takenHere ? '이 장수에게 이미 넣은 전법입니다' : undefined,
       }

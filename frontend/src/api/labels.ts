@@ -86,3 +86,11 @@ export function label(map: Record<string, string>, code: string | null | undefin
   if (!code) return undefined
   return map[code] ?? code
 }
+
+/**
+ * 시즌 표시. 카드에 «S» 가 붙는 시즌 장수·전법을 한눈에 알아보게 한다.
+ * 비어 있으면 시즌 구분이 없는 기본 카드다.
+ */
+export function seasonTag(season?: number): string | undefined {
+  return season == null ? undefined : `S${season}`
+}

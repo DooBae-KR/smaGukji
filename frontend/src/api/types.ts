@@ -66,6 +66,8 @@ export interface Tactic {
   effectText?: string
   roleTags: string[]
   source?: string
+  /** 시즌 전법 번호. 카드에 S 표시가 있는 전법 */
+  season?: number
   dataComplete: boolean
   imageUrl: string
 }

@@ -993,3 +993,50 @@ button.danger:hover:not(:disabled) {
   border-color: #7a5ea8;
   background: rgba(138, 127, 168, 0.15);
 }
+
+/* ---------------- 편성 슬롯의 선택 버튼 ---------------- */
+
+/*
+ * 드롭다운 대신 쓰는 버튼. 고른 카드의 이름과 분류를 두 줄로 보여준다.
+ * 비어 있을 때와 채워졌을 때의 높이가 같아야 슬롯 3개가 나란히 맞는다.
+ */
+.slot-pick {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 2px;
+  width: 100%;
+  min-height: 44px;
+  padding: 6px 10px;
+  text-align: left;
+  background: var(--bg-panel-2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.slot-pick:hover:not(:disabled) {
+  border-color: var(--border-strong);
+}
+
+.slot-pick:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.slot-pick-name {
+  font-size: 13px;
+  color: var(--text);
+}
+
+.slot-pick-sub {
+  font-size: 11px;
+  color: var(--text-faint);
+}
+
+/* 비어 있는 칸은 «누르라»는 신호가 필요하다. */
+.slot-pick-empty {
+  font-size: 13px;
+  color: var(--accent);
+}

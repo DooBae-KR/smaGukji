@@ -2,7 +2,8 @@ import { useEffect, useMemo, useState } from 'react'
 import { setOwned } from '../api/collection'
 import type { CardKind, OwnedCards } from '../api/collection'
 import type { General, Tactic } from '../api/types'
-import { CardGrid } from '../components/CardGrid'
+import { seasonTag } from "../api/labels"
+import { CardGrid } from "../components/CardGrid"
 
 /**
  * 보유 장수·전법 등록 팝업.
@@ -50,12 +51,12 @@ export function CollectionModal({
       ? generals.map((g) => ({
           id: g.id,
           name: g.name,
-          sub: [g.factionLabel, g.unitTypeLabel].filter(Boolean).join(" · "),
+          sub: [seasonTag(g.season), g.factionLabel, g.unitTypeLabel].filter(Boolean).join(" · "),
         }))
       : tactics.map((t) => ({
           id: t.id,
           name: t.name,
-          sub: t.categoryLabel ?? (t.dataComplete ? undefined : '상세 미입력'),
+          sub: [seasonTag(t.season), t.categoryLabel ?? (t.dataComplete ? null : "상세 미입력")].filter(Boolean).join(" · ") || undefined,
         }))
 
     const needle = query.trim().toLowerCase()

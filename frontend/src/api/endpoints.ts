@@ -124,13 +124,14 @@ interface TacticRow {
   effect_text: string | null
   role_tags: string[] | null
   source: string | null
+  season: number | null
 }
 
 export async function listTactics(): Promise<Tactic[]> {
   const rows = unwrap(
     await supabase
       .from('tactic')
-      .select('id, name, category, ability_type, quality, trigger_rate, target_count, effect_text, role_tags, source')
+      .select('id, name, category, ability_type, quality, trigger_rate, target_count, effect_text, role_tags, source, season')
       .order('name'),
   ) as TacticRow[]
 
@@ -148,6 +149,7 @@ export async function listTactics(): Promise<Tactic[]> {
     effectText: r.effect_text ?? undefined,
     roleTags: r.role_tags ?? [],
     source: r.source ?? undefined,
+    season: r.season ?? undefined,
     dataComplete: isTacticDataComplete(r.category, r.trigger_rate),
     imageUrl: assetImageUrl('TACTIC', r.name) ?? '',
   }))
