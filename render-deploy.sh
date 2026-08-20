@@ -83,7 +83,10 @@ EXISTING=$(api GET "/services?name=$NAME&limit=1" | node -e "
   })")
 
 # 환경변수는 서비스 생성/갱신 시 함께 넣는다. 비밀값은 Render 쪽에 저장된다.
-ENVVARS=$(node -e "
+#
+# ⚠️ node 에 값을 넘길 때는 반드시 «접두사» 형태(VAR=x node -e ...)를 써야 한다.
+#    node -e "..." VAR=x 는 환경변수가 아니라 argv 로 들어가서 process.env 가 비어버린다.
+ENVVARS=$(DB_URL="$DB_URL" DB_USER="$DB_USER" DB_PASS="$DB_PASS" node -e "
   const e=[
     ['SPRING_PROFILES_ACTIVE','prod'],
     ['SUPABASE_DB_URL',process.env.DB_URL],
@@ -97,8 +100,9 @@ ENVVARS=$(node -e "
     ['CORS_ALLOWED_ORIGINS',''],
     ['ASSET_SOURCE_DIR',''],
   ];
-  console.log(JSON.stringify(e.map(([key,value])=>({key,value:String(value??'')}))));
-" DB_URL="$DB_URL" DB_USER="$DB_USER" DB_PASS="$DB_PASS")
+  for(const [k,v] of e) if(v===undefined) { console.error('값 누락: '+k); process.exit(1); }
+  console.log(JSON.stringify(e.map(([key,value])=>({key,value:String(value)}))));
+")
 
 if [ -n "$EXISTING" ]; then
   echo "▶ 기존 서비스에 배포 트리거 ($EXISTING)"
@@ -107,7 +111,7 @@ if [ -n "$EXISTING" ]; then
   SERVICE_ID="$EXISTING"
 else
   echo "▶ 서비스 생성"
-  BODY=$(node -e "
+  BODY=$(ENVVARS="$ENVVARS" NAME="$NAME" OWNER="$OWNER" REPO="$REPO" BRANCH="$BRANCH" REGION="$REGION" node -e "
     const envVars=JSON.parse(process.env.ENVVARS);
     console.log(JSON.stringify({
       type:'web_service',
@@ -125,7 +129,7 @@ else
         envSpecificDetails:{ dockerfilePath:'./Dockerfile', dockerContext:'.' },
       },
     }));
-  " ENVVARS="$ENVVARS" NAME="$NAME" OWNER="$OWNER" REPO="$REPO" BRANCH="$BRANCH" REGION="$REGION")
+  ")
 
   RESP=$(api POST "/services" "$BODY")
   SERVICE_ID=$(echo "$RESP" | node -e "
