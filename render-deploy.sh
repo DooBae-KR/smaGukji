@@ -48,6 +48,14 @@ for v in DB_URL DB_USER DB_PASS; do
   [ -n "${!v}" ] || { echo "❌ .env 에 SUPABASE_* 값이 비어 있습니다 ($v)" >&2; exit 1; }
 done
 
+# 시트 URL. 없어도 배포는 되지만 «데이터» 탭의 불러오기 버튼이 거부한다.
+GENERAL_SHEET="$(val GENERAL_SHEET_CSV_URL)"
+ROSTER_SHEET="$(val ROSTER_SHEET_CSV_URL)"
+if [ -z "$GENERAL_SHEET" ] || [ -z "$ROSTER_SHEET" ]; then
+  echo "⚠️  .env 에 시트 URL 이 없습니다. 배포는 진행하지만 시트 불러오기 버튼은 동작하지 않습니다."
+  echo "    GENERAL_SHEET_CSV_URL / ROSTER_SHEET_CSV_URL"
+fi
+
 api() { # api METHOD PATH [BODY]
   local m="$1" p="$2" b="${3:-}"
   if [ -n "$b" ]; then
@@ -86,7 +94,8 @@ EXISTING=$(api GET "/services?name=$NAME&limit=1" | node -e "
 #
 # ⚠️ node 에 값을 넘길 때는 반드시 «접두사» 형태(VAR=x node -e ...)를 써야 한다.
 #    node -e "..." VAR=x 는 환경변수가 아니라 argv 로 들어가서 process.env 가 비어버린다.
-ENVVARS=$(DB_URL="$DB_URL" DB_USER="$DB_USER" DB_PASS="$DB_PASS" node -e "
+ENVVARS=$(DB_URL="$DB_URL" DB_USER="$DB_USER" DB_PASS="$DB_PASS" \
+  GENERAL_SHEET="$GENERAL_SHEET" ROSTER_SHEET="$ROSTER_SHEET" node -e "
   const e=[
     ['SPRING_PROFILES_ACTIVE','prod'],
     ['SUPABASE_DB_URL',process.env.DB_URL],
@@ -99,6 +108,9 @@ ENVVARS=$(DB_URL="$DB_URL" DB_USER="$DB_USER" DB_PASS="$DB_PASS" node -e "
     ['ASSET_IMPORT_ON_STARTUP','false'],
     ['CORS_ALLOWED_ORIGINS',''],
     ['ASSET_SOURCE_DIR',''],
+    // 데이터 탭의 시트 불러오기 버튼이 쓰는 값. 공개 시트라 비밀값이 아니다.
+    ['GENERAL_SHEET_CSV_URL',process.env.GENERAL_SHEET||''],
+    ['ROSTER_SHEET_CSV_URL',process.env.ROSTER_SHEET||''],
   ];
   for(const [k,v] of e) if(v===undefined) { console.error('값 누락: '+k); process.exit(1); }
   console.log(JSON.stringify(e.map(([key,value])=>({key,value:String(value)}))));

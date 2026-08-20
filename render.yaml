@@ -47,3 +47,15 @@ services:
         value: none
       - key: ASSET_IMPORT_ON_STARTUP
         value: "false"
+
+      # 프론트를 같은 서비스에서 서빙하므로 CORS 는 필요 없다.
+      - key: CORS_ALLOWED_ORIGINS
+        value: ""
+
+      # «데이터» 탭의 시트 불러오기 버튼이 쓰는 값.
+      # 공개 시트 URL 이라 비밀값은 아니지만, 시트가 바뀔 수 있어 대시보드에서 넣는다.
+      # (./render-deploy.sh 를 쓰면 .env 값으로 자동 주입된다)
+      - key: GENERAL_SHEET_CSV_URL
+        sync: false
+      - key: ROSTER_SHEET_CSV_URL
+        sync: false
