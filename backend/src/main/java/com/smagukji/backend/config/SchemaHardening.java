@@ -1,5 +1,6 @@
 package com.smagukji.backend.config;
 
+import java.util.List;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -54,6 +55,53 @@ public class SchemaHardening {
             // 앱은 계속 뜬다. 다만 이력이 노출된 채로 도는 것이므로 경고로 남긴다.
             log.warn("마이그레이션 이력 테이블 잠금 실패 — anon 키로 이력이 읽힐 수 있습니다: {}",
                     e.getMessage());
+        }
+    }
+
+    /**
+     * 기동할 때마다 «인터넷에 열린 것이 없는지» 훑는다.
+     *
+     * <p>Supabase 는 public 스키마의 새 테이블에 anon·authenticated 전체 권한을 자동으로 붙인다.
+     * V21 에서 그 기본 설정을 껐지만, 대시보드에서 테이블을 만들거나 설정이 되돌아가면
+     * 다시 열릴 수 있다. 그때 조용히 공개되는 것보다 로그에 남는 편이 낫다.
+     *
+     * <p>RLS 가 꺼진 테이블은 정책이 없어도 통째로 읽힌다. 그래서 따로 본다.
+     */
+    @EventListener(ApplicationReadyEvent.class)
+    public void auditPublicExposure() {
+        if (!roleExists("anon")) {
+            return;
+        }
+        try {
+            List<String> openToAnon = jdbc.queryForList("""
+                    select c.relname
+                      from pg_class c join pg_namespace n on n.oid = c.relnamespace
+                     where n.nspname = 'public' and c.relkind = 'r'
+                       and has_table_privilege('anon', c.oid, 'select')
+                     order by 1
+                    """, String.class);
+
+            List<String> rlsOff = jdbc.queryForList("""
+                    select c.relname
+                      from pg_class c join pg_namespace n on n.oid = c.relnamespace
+                     where n.nspname = 'public' and c.relkind = 'r'
+                       and not c.relrowsecurity
+                     order by 1
+                    """, String.class);
+
+            if (!openToAnon.isEmpty()) {
+                log.warn("⚠️ anon 이 읽을 수 있는 테이블이 있습니다: {} — 정책이 없으면 인터넷에 공개됩니다.",
+                        String.join(", ", openToAnon));
+            }
+            if (!rlsOff.isEmpty()) {
+                log.warn("⚠️ RLS 가 꺼진 테이블이 있습니다: {} — 권한이 있으면 통째로 읽힙니다.",
+                        String.join(", ", rlsOff));
+            }
+            if (openToAnon.isEmpty() && rlsOff.isEmpty()) {
+                log.info("공개 노출 점검 통과 — anon 이 읽을 수 있는 테이블이 없고 RLS 도 모두 켜져 있습니다.");
+            }
+        } catch (RuntimeException e) {
+            log.warn("공개 노출 점검 실패: {}", e.getMessage());
         }
     }
 

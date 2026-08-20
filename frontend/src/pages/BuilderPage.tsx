@@ -1,8 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { analyzeDraft, listGenerals, listTactics } from '../api/endpoints'
 import { assetImageUrl } from '../api/client'
+import { EMPTY_OWNED, loadOwned } from '../api/collection'
+import type { OwnedCards } from '../api/collection'
 import type { General, Tactic, TeamAnalysis, TeamRequest } from '../api/types'
 import { AnalysisPanel } from '../components/AnalysisPanel'
+import { CollectionModal } from './CollectionModal'
 
 const SLOT_COUNT = 3
 const TACTICS_PER_SLOT = 2
@@ -25,11 +28,20 @@ export function BuilderPage() {
   const [analysis, setAnalysis] = useState<TeamAnalysis | null>(null)
   const [error, setError] = useState<string | null>(null)
 
+  // 보유 목록. 등록해 둔 것이 있으면 그것만 고르게 하는 편이 실제 편성에 가깝다.
+  const [owned, setOwned] = useState<OwnedCards>(EMPTY_OWNED)
+  const [showCollection, setShowCollection] = useState(false)
+  const [onlyOwned, setOnlyOwned] = useState(false)
+
   useEffect(() => {
-    Promise.all([listGenerals(), listTactics()])
-      .then(([g, t]) => {
+    Promise.all([listGenerals(), listTactics(), loadOwned()])
+      .then(([g, t, o]) => {
         setGenerals(g)
         setTactics(t)
+        setOwned(o)
+        // 아직 아무것도 등록하지 않았다면 걸러봐야 빈 목록만 나온다.
+        // 하나라도 등록해 뒀다면 그걸 쓰려고 등록한 것이므로 기본으로 켠다.
+        setOnlyOwned(o.generals.size > 0 || o.tactics.size > 0)
       })
       .catch((e) => setError(e.message))
   }, [])
@@ -80,6 +92,24 @@ export function BuilderPage() {
   /** 이미 다른 슬롯에 배치된 장수는 고를 수 없다. 백엔드도 같은 규칙으로 거절한다. */
   const usedGenerals = new Set(slots.map((s) => s.generalName).filter(Boolean))
 
+  /**
+   * 선택지를 보유한 것으로 좁힌다.
+   *
+   * 이미 골라둔 것은 보유 목록에 없더라도 남긴다. 빼버리면 select 가 빈칸이 되어
+   * 편성이 조용히 지워진 것처럼 보인다.
+   */
+  const visibleGenerals = useMemo(() => {
+    if (!onlyOwned) return generals
+    return generals.filter((g) => owned.generals.has(g.id) || usedGenerals.has(g.name))
+    // usedGenerals 는 slots 에서 파생되므로 slots 를 의존성으로 둔다.
+  }, [generals, owned, onlyOwned, slots])
+
+  const visibleTactics = useMemo(() => {
+    if (!onlyOwned) return tactics
+    const picked = new Set(slots.flatMap((s) => s.tacticNames).filter(Boolean))
+    return tactics.filter((t) => owned.tactics.has(t.id) || picked.has(t.name))
+  }, [tactics, owned, onlyOwned, slots])
+
   return (
     <div className="builder">
       <div>
@@ -110,6 +140,18 @@ export function BuilderPage() {
             />
           </label>
           <div className="spacer" />
+          <label className="checkline" title="등록해 둔 보유 카드만 선택지에 보여줍니다">
+            <input
+              type="checkbox"
+              checked={onlyOwned}
+              onChange={(e) => setOnlyOwned(e.target.checked)}
+            />
+            보유한 것만
+          </label>
+          <button onClick={() => setShowCollection(true)}>
+            📦 보유 등록
+            <span className="muted"> ({owned.generals.size + owned.tactics.size})</span>
+          </button>
           <button
             onClick={() =>
               setSlots(Array.from({ length: SLOT_COUNT }, () => ({ ...EMPTY_SLOT, tacticNames: ['', ''] })))
@@ -118,6 +160,12 @@ export function BuilderPage() {
             초기화
           </button>
         </div>
+
+        {onlyOwned && owned.generals.size === 0 && (
+          <p className="muted">
+            보유 장수가 하나도 등록돼 있지 않습니다. «📦 보유 등록» 에서 가진 카드를 켜주세요.
+          </p>
+        )}
 
         <div className="slots">
           {slots.map((slot, i) => {
@@ -151,7 +199,7 @@ export function BuilderPage() {
                     onChange={(e) => setSlot(i, { generalName: e.target.value })}
                   >
                     <option value="">— 선택 —</option>
-                    {generals.map((g) => (
+                    {visibleGenerals.map((g) => (
                       <option
                         key={g.id}
                         value={g.name}
@@ -176,7 +224,7 @@ export function BuilderPage() {
                       }}
                     >
                       <option value="">— 없음 —</option>
-                      {tactics.map((tc) => (
+                      {visibleTactics.map((tc) => (
                         <option
                           key={tc.id}
                           value={tc.name}
@@ -198,6 +246,16 @@ export function BuilderPage() {
       </div>
 
       <AnalysisPanel analysis={analysis} />
+
+      {showCollection && (
+        <CollectionModal
+          generals={generals}
+          tactics={tactics}
+          owned={owned}
+          onChanged={setOwned}
+          onClose={() => setShowCollection(false)}
+        />
+      )}
     </div>
   )
 }
