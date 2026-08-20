@@ -36,6 +36,9 @@ public class AssetImageImportService {
     /** OneDrive/macOS 를 거친 한글 파일명은 NFD 로 분해되어 있을 수 있어 항상 NFC 로 정규화한다. */
     private static final Normalizer.Form NAME_FORM = Normalizer.Form.NFC;
 
+    /** 하위 폴더를 몇 단계까지 훑을지. «장수/시즌2» 정도면 충분하고, 백업 사본까지 파고들 필요는 없다. */
+    private static final int MAX_SCAN_DEPTH = 3;
+
     private final AssetImageRepository repository;
     private final AssetProperties properties;
 
@@ -115,8 +118,17 @@ public class AssetImageImportService {
         return Outcome.INSERTED;
     }
 
+    /**
+     * PNG 를 하위 폴더까지 찾는다.
+     *
+     * <p>카드를 «장수/시즌2» 처럼 묶어두는 경우가 있다. 예전에는 바로 아래만 훑어서
+     * 그런 폴더의 카드가 통째로 빠졌고, 이미지 없는 장수가 생겼다.
+     *
+     * <p>깊이를 제한하는 이유는, 원본 폴더 아래에 백업 사본 같은 것이 섞여 있어도
+     * 끝없이 파고들지 않게 하기 위해서다.
+     */
     private static List<Path> listPngFiles(Path dir) {
-        try (Stream<Path> stream = Files.list(dir)) {
+        try (Stream<Path> stream = Files.walk(dir, MAX_SCAN_DEPTH)) {
             return stream.filter(Files::isRegularFile)
                     .filter(p -> p.getFileName().toString().toLowerCase(Locale.ROOT).endsWith(".png"))
                     .sorted()
