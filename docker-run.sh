@@ -38,12 +38,19 @@ fi
 docker rm -f "$NAME" >/dev/null 2>&1 || true
 
 echo "▶ 컨테이너 실행"
+# --env-file 뒤에 오는 -e 가 우선한다. .env 의 개발용 값을 운영값으로 덮어쓴다.
+#   CORS_ALLOWED_ORIGINS : 프론트를 같은 컨테이너에서 서빙하므로 CORS 가 필요 없다.
+#                          .env 의 localhost:5173 이 그대로 들어가면 불필요한 오리진이 열린다.
+#   ASSET_SOURCE_DIR     : 컨테이너 안에는 그 폴더가 없다. 이미지는 이미 DB 에 있다.
 docker run -d --name "$NAME" \
   -p "${PORT}:8080" \
   --env-file .env \
   -e SPRING_PROFILES_ACTIVE=prod \
   -e APP_MIN_PASSWORD_LENGTH=8 \
   -e DB_POOL_MAX_SIZE=3 \
+  -e CORS_ALLOWED_ORIGINS= \
+  -e ASSET_SOURCE_DIR= \
+  -e ASSET_IMPORT_ON_STARTUP=false \
   --restart unless-stopped \
   "$IMAGE"
 
