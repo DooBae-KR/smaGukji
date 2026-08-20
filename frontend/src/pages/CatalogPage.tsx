@@ -106,7 +106,15 @@ export function CatalogPage({ kind }: { kind: Kind }) {
                 />
                 <div className="meta">
                   <span className="name">{t.name}</span>
-                  <span className="dim">{t.categoryLabel ?? '분류 미입력'}</span>
+                  <span className="dim">
+                    {t.rarity && (
+                      <span className={`rarity-chip rarity-${t.rarity}`}>
+                        {t.rarity === 'LEGEND' ? '전설' : '영웅'}
+                      </span>
+                    )}{' '}
+                    {t.season != null && <span className="chip">S{t.season}</span>}{' '}
+                    {t.categoryLabel ?? '분류 미입력'}
+                  </span>
                   <span className="dim">
                     {t.triggerRate != null ? `발동 ${t.triggerRate}%` : '발동확률 미입력'}
                   </span>

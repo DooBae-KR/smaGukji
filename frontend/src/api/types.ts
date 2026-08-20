@@ -68,6 +68,8 @@ export interface Tactic {
   source?: string
   /** 시즌 전법 번호. 카드에 S 표시가 있는 전법 */
   season?: number
+  /** LEGEND 전설 / HERO 영웅. 비어 있으면 아직 확인되지 않음 */
+  rarity?: "LEGEND" | "HERO"
   dataComplete: boolean
   imageUrl: string
 }
