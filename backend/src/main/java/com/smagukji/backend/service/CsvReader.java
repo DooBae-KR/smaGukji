@@ -43,7 +43,7 @@ final class CsvReader {
         return result;
     }
 
-    private static List<List<String>> parseRows(String csv) {
+    static List<List<String>> parseRows(String csv) {
         List<List<String>> rows = new ArrayList<>();
         List<String> current = new ArrayList<>();
         StringBuilder field = new StringBuilder();

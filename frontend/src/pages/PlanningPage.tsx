@@ -49,7 +49,7 @@ export function PlanningPage() {
       label: '장수 병종',
       filled: unitFilled,
       total: generals.length,
-      why: '카드 아이콘이 작아 판독하지 않고 비워둔 값입니다. 추측하면 상성 분석이 조용히 틀립니다.',
+      why: '스프레드시트에 채워진 장수만 값이 있습니다. 나머지는 추측하지 않고 비워둔 상태입니다.',
       unlocks: '병종 일관성 채점(10점)과 전략팀 병종 분포가 켜집니다.',
     },
   ]

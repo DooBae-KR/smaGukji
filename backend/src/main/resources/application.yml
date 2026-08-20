@@ -67,6 +67,9 @@ server:
   port: ${SERVER_PORT:8080}
 
 app:
+  sheet:
+    # 장수 분류 스프레드시트(CSV export). 비우면 /api/generals/sync-sheet 가 거부한다.
+    general-csv-url: ${GENERAL_SHEET_CSV_URL:}
   security:
     # 인터넷에 노출한다면 8 이상으로 올리세요. 낮으면 기동 시 경고가 남습니다.
     min-password-length: ${APP_MIN_PASSWORD_LENGTH:4}

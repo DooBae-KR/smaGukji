@@ -51,20 +51,35 @@ public class General {
     @Column(name = "rarity", columnDefinition = "text")
     private String rarity;
 
-    @Column(name = "attack")
-    private Integer attack;
+    /** 진영(배치). 세력과는 다른 축이다. */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "camp", columnDefinition = "text")
+    private Camp camp;
 
-    @Column(name = "defense")
-    private Integer defense;
+    /** 성향. 한 장수가 여러 성향을 가질 수 있어 배열이다. */
+    @org.hibernate.annotations.JdbcTypeCode(org.hibernate.type.SqlTypes.ARRAY)
+    @Column(name = "dispositions", nullable = false, columnDefinition = "text[]")
+    private String[] dispositions = new String[0];
 
-    @Column(name = "intelligence")
-    private Integer intelligence;
+    /** 무력 (stat_level 기준). 시트 값이 .5 단위라 정수로 담을 수 없다. */
+    @Column(name = "might", precision = 6, scale = 1)
+    private BigDecimal might;
 
-    @Column(name = "command")
-    private Integer command;
+    /** 지력 */
+    @Column(name = "intellect", precision = 6, scale = 1)
+    private BigDecimal intellect;
 
-    @Column(name = "speed")
-    private Integer speed;
+    /** 통솔 */
+    @Column(name = "leadership", precision = 6, scale = 1)
+    private BigDecimal leadership;
+
+    /** 선공 */
+    @Column(name = "initiative", precision = 6, scale = 1)
+    private BigDecimal initiative;
+
+    /** 위 수치의 기준 레벨. 시트는 50렙 기준. */
+    @Column(name = "stat_level", nullable = false)
+    private int statLevel = 50;
 
     @Column(name = "note", columnDefinition = "text")
     private String note;
@@ -141,44 +156,60 @@ public class General {
         this.rarity = rarity;
     }
 
-    public Integer getAttack() {
-        return attack;
+    public Camp getCamp() {
+        return camp;
     }
 
-    public void setAttack(Integer attack) {
-        this.attack = attack;
+    public void setCamp(Camp camp) {
+        this.camp = camp;
     }
 
-    public Integer getDefense() {
-        return defense;
+    public String[] getDispositions() {
+        return dispositions == null ? new String[0] : dispositions.clone();
     }
 
-    public void setDefense(Integer defense) {
-        this.defense = defense;
+    public void setDispositions(String[] dispositions) {
+        this.dispositions = dispositions == null ? new String[0] : dispositions.clone();
     }
 
-    public Integer getIntelligence() {
-        return intelligence;
+    public BigDecimal getMight() {
+        return might;
     }
 
-    public void setIntelligence(Integer intelligence) {
-        this.intelligence = intelligence;
+    public void setMight(BigDecimal might) {
+        this.might = might;
     }
 
-    public Integer getCommand() {
-        return command;
+    public BigDecimal getIntellect() {
+        return intellect;
     }
 
-    public void setCommand(Integer command) {
-        this.command = command;
+    public void setIntellect(BigDecimal intellect) {
+        this.intellect = intellect;
     }
 
-    public Integer getSpeed() {
-        return speed;
+    public BigDecimal getLeadership() {
+        return leadership;
     }
 
-    public void setSpeed(Integer speed) {
-        this.speed = speed;
+    public void setLeadership(BigDecimal leadership) {
+        this.leadership = leadership;
+    }
+
+    public BigDecimal getInitiative() {
+        return initiative;
+    }
+
+    public void setInitiative(BigDecimal initiative) {
+        this.initiative = initiative;
+    }
+
+    public int getStatLevel() {
+        return statLevel;
+    }
+
+    public void setStatLevel(int statLevel) {
+        this.statLevel = statLevel;
     }
 
     public String getNote() {

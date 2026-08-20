@@ -14,6 +14,9 @@ export function StrategyPage() {
   const stats = useMemo(() => {
     const byFaction = new Map<string, number>()
     const byUnit = new Map<string, number>()
+    const byCamp = new Map<string, number>()
+    // 성향은 복수라 장수 한 명이 여러 항목에 잡힌다. 합계가 인원수와 다를 수 있다.
+    const byDisposition = new Map<string, number>()
     let unitUnknown = 0
     let costSum = 0
 
@@ -21,12 +24,20 @@ export function StrategyPage() {
       byFaction.set(g.factionLabel, (byFaction.get(g.factionLabel) ?? 0) + 1)
       if (g.unitTypeLabel) byUnit.set(g.unitTypeLabel, (byUnit.get(g.unitTypeLabel) ?? 0) + 1)
       else unitUnknown++
+      if (g.campLabel) byCamp.set(g.campLabel, (byCamp.get(g.campLabel) ?? 0) + 1)
+      for (const d of g.dispositionLabels) {
+        byDisposition.set(d, (byDisposition.get(d) ?? 0) + 1)
+      }
       costSum += g.cost
     }
+    const desc = (m: Map<string, number>) => [...m.entries()].sort((a, b) => b[1] - a[1])
     return {
-      byFaction: [...byFaction.entries()].sort((a, b) => b[1] - a[1]),
-      byUnit: [...byUnit.entries()].sort((a, b) => b[1] - a[1]),
+      byFaction: desc(byFaction),
+      byUnit: desc(byUnit),
+      byCamp: desc(byCamp),
+      byDisposition: desc(byDisposition),
       unitUnknown,
+      classified: generals.filter((g) => g.campLabel).length,
       avgCost: generals.length ? costSum / generals.length : 0,
     }
   }, [generals])
@@ -48,10 +59,53 @@ export function StrategyPage() {
           <div className="v">{stats.avgCost.toFixed(1)}</div>
         </div>
         <div className="stat">
+          <div className="k">분류 입력 완료</div>
+          <div className={`v ${stats.classified < generals.length ? 'bad' : ''}`}>
+            {stats.classified} / {generals.length}
+          </div>
+        </div>
+        <div className="stat">
           <div className="k">병종 미입력</div>
           <div className={`v ${stats.unitUnknown > 0 ? 'bad' : ''}`}>{stats.unitUnknown}명</div>
         </div>
       </div>
+
+      <h3>진영 분포</h3>
+      {stats.byCamp.length === 0 ? (
+        <p className="muted">진영이 입력된 장수가 없습니다.</p>
+      ) : (
+        <table className="data">
+          <tbody>
+            {stats.byCamp.map(([label, n]) => (
+              <tr key={label}>
+                <td style={{ width: 60 }}>{label}</td>
+                <td style={{ textAlign: 'right' }}>{n}명</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+
+      <h3>성향 분포</h3>
+      {stats.byDisposition.length === 0 ? (
+        <p className="muted">성향이 입력된 장수가 없습니다.</p>
+      ) : (
+        <>
+          <p className="muted">
+            한 장수가 여러 성향을 가질 수 있어 합계가 인원수와 다를 수 있습니다.
+          </p>
+          <table className="data">
+            <tbody>
+              {stats.byDisposition.map(([label, n]) => (
+                <tr key={label}>
+                  <td style={{ width: 90 }}>{label}</td>
+                  <td style={{ textAlign: 'right' }}>{n}명</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </>
+      )}
 
       <h3>세력 분포</h3>
       <table className="data">

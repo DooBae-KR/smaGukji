@@ -1,6 +1,8 @@
 package com.smagukji.backend.service;
 
 import com.smagukji.backend.domain.AbilityType;
+import com.smagukji.backend.domain.Camp;
+import com.smagukji.backend.domain.Disposition;
 import com.smagukji.backend.domain.General;
 import com.smagukji.backend.domain.Tactic;
 import com.smagukji.backend.domain.TacticCategory;
@@ -11,6 +13,7 @@ import com.smagukji.backend.repository.GeneralRepository;
 import com.smagukji.backend.repository.TacticRepository;
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -111,7 +114,12 @@ public class MasterDataImportService {
     // 장수
     // ---------------------------------------------------------------
 
-    /** 헤더: name,unitType,attack,defense,intelligence,command,speed,signatureTacticName,note */
+    /**
+     * 헤더: name,unitType,camp,dispositions,might,intellect,leadership,initiative,
+     *      statLevel,signatureTacticName,note
+     *
+     * <p>dispositions 는 복수라 {@code |} 또는 {@code ;} 로 구분한다. 예: {@code 방어|병기}
+     */
     @Transactional
     public ImportReport importGenerals(String csv) {
         List<Map<String, String>> rows = CsvReader.parse(csv);
@@ -137,12 +145,18 @@ public class MasterDataImportService {
             try {
                 boolean changed = false;
                 changed |= set(row, "unitType", v -> general.setUnitType(parseUnitType(v)));
-                changed |= set(row, "attack", v -> general.setAttack(Integer.valueOf(v.trim())));
-                changed |= set(row, "defense", v -> general.setDefense(Integer.valueOf(v.trim())));
-                changed |= set(row, "intelligence",
-                        v -> general.setIntelligence(Integer.valueOf(v.trim())));
-                changed |= set(row, "command", v -> general.setCommand(Integer.valueOf(v.trim())));
-                changed |= set(row, "speed", v -> general.setSpeed(Integer.valueOf(v.trim())));
+                changed |= set(row, "camp", v -> general.setCamp(parseCamp(v)));
+                changed |= set(row, "dispositions",
+                        v -> general.setDispositions(parseDispositions(v)));
+                changed |= set(row, "might", v -> general.setMight(new BigDecimal(v.trim())));
+                changed |= set(row, "intellect",
+                        v -> general.setIntellect(new BigDecimal(v.trim())));
+                changed |= set(row, "leadership",
+                        v -> general.setLeadership(new BigDecimal(v.trim())));
+                changed |= set(row, "initiative",
+                        v -> general.setInitiative(new BigDecimal(v.trim())));
+                changed |= set(row, "statLevel",
+                        v -> general.setStatLevel(Integer.parseInt(v.trim())));
                 changed |= set(row, "note", general::setNote);
                 changed |= set(row, "signatureTacticName", v -> general.setSignatureTactic(
                         tacticRepository.findByName(v.trim()).orElseThrow(
@@ -209,6 +223,7 @@ public class MasterDataImportService {
 
     private static AbilityType parseAbilityType(String value) {
         return switch (value.trim()) {
+            case "치유" -> AbilityType.HEAL;
             case "병기" -> AbilityType.WEAPON;
             case "책략" -> AbilityType.STRATEGY;
             case "방어" -> AbilityType.DEFENSE;
@@ -240,12 +255,43 @@ public class MasterDataImportService {
 
     private static UnitType parseUnitType(String value) {
         return switch (value.trim()) {
+            case "방패병" -> UnitType.SHIELD;
+            case "창병" -> UnitType.SPEAR;
+            case "궁병" -> UnitType.BOW;
             case "기병" -> UnitType.CAVALRY;
-            case "보병" -> UnitType.INFANTRY;
-            case "궁병" -> UnitType.ARCHER;
-            case "창병" -> UnitType.SPEARMAN;
-            case "병기" -> UnitType.SIEGE;
             default -> UnitType.valueOf(value.trim().toUpperCase(Locale.ROOT));
+        };
+    }
+
+    private static Camp parseCamp(String value) {
+        return switch (value.trim()) {
+            case "전열" -> Camp.FRONT;
+            case "균형" -> Camp.BALANCE;
+            case "후열" -> Camp.BACK;
+            default -> Camp.valueOf(value.trim().toUpperCase(Locale.ROOT));
+        };
+    }
+
+    /** 성향은 복수다. 파이프나 세미콜론으로 구분한다. 예: 방어|병기 */
+    private static String[] parseDispositions(String value) {
+        return Arrays.stream(value.split("[|;]"))
+                .map(String::trim)
+                .filter(v -> !v.isEmpty())
+                .map(MasterDataImportService::parseDisposition)
+                .map(Enum::name)
+                .toArray(String[]::new);
+    }
+
+    private static Disposition parseDisposition(String value) {
+        return switch (value.trim()) {
+            case "치유" -> Disposition.HEAL;
+            case "보조" -> Disposition.SUPPORT;
+            case "방어" -> Disposition.DEFENSE;
+            case "보조방어" -> Disposition.SUPPORT_DEFENSE;
+            case "문무보조" -> Disposition.CIVIL_MARTIAL_SUPPORT;
+            case "책략" -> Disposition.STRATEGY;
+            case "병기" -> Disposition.WEAPON;
+            default -> Disposition.valueOf(value.trim().toUpperCase(Locale.ROOT));
         };
     }
 }

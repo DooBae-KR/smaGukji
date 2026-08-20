@@ -75,7 +75,18 @@ export function CatalogPage({ kind }: { kind: Kind }) {
                     <span className={`faction-chip faction-${g.faction}`}>{g.factionLabel}</span>{' '}
                     코스트 {g.cost}
                   </span>
-                  <span className="dim">병종 {g.unitTypeLabel ?? '미입력'}</span>
+                  <span className="dim">
+                    {g.campLabel ? `${g.campLabel} · ` : ''}
+                    {g.unitTypeLabel ?? '병종 미입력'}
+                  </span>
+                  {g.dispositionLabels.length > 0 && (
+                    <span className="dim">{g.dispositionLabels.join(' · ')}</span>
+                  )}
+                  {g.might != null && (
+                    <span className="dim">
+                      무{g.might} 지{g.intellect} 통{g.leadership} 선{g.initiative}
+                    </span>
+                  )}
                 </div>
               </div>
             ))

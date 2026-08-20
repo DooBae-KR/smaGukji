@@ -3,10 +3,13 @@ package com.smagukji.backend.domain;
 /** 전법 능력 타입. DB 의 tactic.ability_type 체크 제약과 값이 일치해야 한다. */
 public enum AbilityType {
 
-    WEAPON("병기"),
-    STRATEGY("책략"),
-    DEFENSE("방어"),
+    HEAL("치유"),
     SUPPORT("보조"),
+    STRATEGY("책략"),
+    WEAPON("병기"),
+    DEFENSE("방어"),
+    CIVIL_MARTIAL("문무"),
+    /** 실제 데이터에서 아직 관측되지 않았다. 예비로 남겨둔다. */
     CONTROL("제어");
 
     private final String label;

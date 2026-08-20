@@ -26,13 +26,22 @@ export interface General {
   faction: FactionCode
   factionLabel: string
   cost: number
+  /** 병종: SHIELD 방패병 / SPEAR 창병 / BOW 궁병 / CAVALRY 기병 */
   unitType?: string
   unitTypeLabel?: string
-  attack?: number
-  defense?: number
-  intelligence?: number
-  command?: number
-  speed?: number
+  /** 진영(배치): FRONT 전열 / BALANCE 균형 / BACK 후열. 세력과는 다른 축이다 */
+  camp?: string
+  campLabel?: string
+  /** 성향 코드. 한 장수가 여러 성향을 가질 수 있다 (예: 방어+병기) */
+  dispositions: string[]
+  /** 위 코드의 한글 라벨. 순서가 대응된다 */
+  dispositionLabels: string[]
+  /** 무력 · 지력 · 통솔 · 선공 (statLevel 기준, 소수점 있음) */
+  might?: number
+  intellect?: number
+  leadership?: number
+  initiative?: number
+  statLevel: number
   signatureTacticName?: string
   note?: string
   imageUrl: string

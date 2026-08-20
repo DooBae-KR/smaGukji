@@ -10,15 +10,15 @@ import type { Completeness } from '../api/types'
 const TACTIC_HEADER =
   'name,category,abilityType,quality,triggerRate,targetCount,source,roleTags,effectText'
 const GENERAL_HEADER =
-  'name,unitType,attack,defense,intelligence,command,speed,signatureTacticName,note'
+  'name,unitType,camp,dispositions,might,intellect,leadership,initiative,statLevel,signatureTacticName,note'
 
 const TACTIC_SAMPLE = `${TACTIC_HEADER}
 강습,액티브,병기,보라,80,1,전수,딜_병기,"일반 공격 후 랜덤 적군 단일에게 이번 공격 80%의 피해를 준다"
 기문둔갑,액티브,책략,황금,50,,전수,딜_책략,"1턴 준비 후 전체 적군에게 250%의 책략 피해"`
 
 const GENERAL_SAMPLE = `${GENERAL_HEADER}
-관우,기병,,,,,,,
-장비,창병,,,,,,,`
+관우,기병,후열,병기,257.5,153.5,210.5,200.5,50,화하진압,
+전위,창병,전열,방어|병기,245,59,193,169,50,,`
 
 type ImportResult = { updated: number; skipped: number; notFound: string[]; errors: string[] }
 
@@ -109,7 +109,10 @@ export function DataPage() {
       <p className="muted">
         헤더: <code>{GENERAL_HEADER}</code>
         <br />
-        병종은 <code>기병 / 보병 / 궁병 / 창병 / 병기</code> 중 하나입니다.
+        병종은 <code>방패병 / 창병 / 궁병 / 기병</code>, 진영은 <code>전열 / 균형 / 후열</code> 중 하나입니다.
+        <br />
+        성향은 여러 개일 수 있어 <code>|</code> 로 구분합니다 (예: <code>방어|병기</code>).
+        값은 <code>치유 · 보조 · 방어 · 보조방어 · 문무보조 · 책략 · 병기</code> 입니다.
       </p>
       <textarea
         className="csv"
