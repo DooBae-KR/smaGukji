@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
-import { assetImageUrl } from '../api/client'
 import { setOwned } from '../api/collection'
 import type { CardKind, OwnedCards } from '../api/collection'
 import type { General, Tactic } from '../api/types'
+import { CardGrid } from '../components/CardGrid'
 
 /**
  * 보유 장수·전법 등록 팝업.
@@ -50,7 +50,7 @@ export function CollectionModal({
       ? generals.map((g) => ({
           id: g.id,
           name: g.name,
-          sub: `${g.factionLabel} · ${g.cost}`,
+          sub: [g.factionLabel, g.unitTypeLabel].filter(Boolean).join(" · "),
         }))
       : tactics.map((t) => ({
           id: t.id,
@@ -156,32 +156,12 @@ export function CollectionModal({
           <p className="muted">검색 결과가 없습니다.</p>
         )}
 
-        <div className="collection-grid">
-          {items.map((item) => {
-            const on = ownedIds.has(item.id)
-            const img = assetImageUrl(kind, item.name)
-            return (
-              <button
-                key={item.id}
-                type="button"
-                className={`collection-card ${on ? 'owned' : ''}`}
-                aria-pressed={on}
-                onClick={() => apply([item.id], !on)}
-              >
-                {img ? (
-                  <img src={img} alt="" loading="lazy" />
-                ) : (
-                  <div className="collection-noimg">이미지 없음</div>
-                )}
-                <span className="collection-name">{item.name}</span>
-                {item.sub && <span className="collection-sub">{item.sub}</span>}
-                <span className="collection-mark" aria-hidden="true">
-                  {on ? '✓' : ''}
-                </span>
-              </button>
-            )
-          })}
-        </div>
+        <CardGrid
+          kind={kind}
+          items={items}
+          isOn={(id) => ownedIds.has(id)}
+          onPick={(id) => apply([id], !ownedIds.has(id))}
+        />
 
         <div className="toolbar" style={{ marginTop: 12 }}>
           <div className="spacer" />

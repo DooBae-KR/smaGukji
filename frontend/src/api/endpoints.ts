@@ -44,7 +44,9 @@ interface GeneralRow {
   id: string
   name: string
   faction: string
-  cost: number
+  level: number
+  rarity: string | null
+  season: number | null
   unit_type: string | null
   camp: string | null
   dispositions: string[] | null
@@ -60,7 +62,7 @@ interface GeneralRow {
 export async function listGenerals(faction?: FactionCode): Promise<General[]> {
   let query = supabase
     .from('general')
-    .select('id, name, faction, cost, unit_type, camp, dispositions, might, intellect, leadership, initiative, stat_level, signature_tactic_id, note')
+    .select('id, name, faction, level, rarity, season, unit_type, camp, dispositions, might, intellect, leadership, initiative, stat_level, signature_tactic_id, note')
     .order('name')
   if (faction) query = query.eq('faction', faction)
 
@@ -80,7 +82,9 @@ export async function listGenerals(faction?: FactionCode): Promise<General[]> {
     name: r.name,
     faction: r.faction as FactionCode,
     factionLabel: label(FACTION_LABEL, r.faction) ?? r.faction,
-    cost: r.cost,
+    level: r.level,
+    rarity: (r.rarity as "LEGEND" | "HERO" | null) ?? undefined,
+    season: r.season ?? undefined,
     unitType: r.unit_type ?? undefined,
     unitTypeLabel: label(UNIT_TYPE_LABEL, r.unit_type),
     camp: r.camp ?? undefined,

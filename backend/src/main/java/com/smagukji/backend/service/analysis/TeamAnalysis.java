@@ -23,20 +23,26 @@ public record TeamAnalysis(
         String grade,
         double scoreCoverage,
         String confidence,
-        CostAnalysis cost,
+        RosterAnalysis roster,
         FactionAnalysis faction,
         UnitTypeAnalysis unitType,
         TacticAnalysis tactics,
         SimulationSummary simulation,
         List<Finding> findings) {
 
-    /** 코스트 분석. */
-    public record CostAnalysis(
-            BigDecimal total,
-            BigDecimal limit,
-            BigDecimal remaining,
-            boolean overBudget,
-            int generalCount) {
+    /**
+     * 편성 구성.
+     *
+     * <p>예전에는 코스트 합계와 상한을 담았는데, 이 게임에는 코스트라는 개념이 없다.
+     * 카드에 적힌 숫자는 레벨이고, 코스트 제한 없이 어떤 장수든 넣을 수 있다.
+     * 그래서 «몇 자리를 채웠는가» 만 남겼다.
+     *
+     * @param generalCount 배치된 장수 수
+     * @param slotCapacity 채울 수 있는 자리 수
+     */
+    public record RosterAnalysis(
+            int generalCount,
+            int slotCapacity) {
     }
 
     /**

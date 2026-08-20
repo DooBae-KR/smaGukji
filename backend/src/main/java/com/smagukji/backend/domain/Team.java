@@ -11,7 +11,6 @@ import jakarta.persistence.OrderBy;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
-import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -38,9 +37,6 @@ public class Team {
     @Column(name = "description", columnDefinition = "text")
     private String description;
 
-    @Column(name = "cost_limit", nullable = false, precision = 4, scale = 1)
-    private BigDecimal costLimit = new BigDecimal("15.0");
-
     @OneToMany(mappedBy = "team", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("position asc")
     private List<TeamSlot> slots = new ArrayList<>();
@@ -55,11 +51,8 @@ public class Team {
         // JPA 전용
     }
 
-    public Team(String name, BigDecimal costLimit) {
+    public Team(String name) {
         this.name = name;
-        if (costLimit != null) {
-            this.costLimit = costLimit;
-        }
     }
 
     @PrePersist
@@ -112,14 +105,6 @@ public class Team {
 
     public void setDescription(String description) {
         this.description = description;
-    }
-
-    public BigDecimal getCostLimit() {
-        return costLimit;
-    }
-
-    public void setCostLimit(BigDecimal costLimit) {
-        this.costLimit = costLimit;
     }
 
     public List<TeamSlot> getSlots() {

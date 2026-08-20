@@ -5,7 +5,6 @@ import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
-import java.math.BigDecimal;
 import java.util.List;
 
 /**
@@ -20,7 +19,6 @@ public record TeamRequest(
 
         String description,
 
-        BigDecimal costLimit,
 
         @Valid
         @Size(max = 3, message = "부대에는 장수를 최대 3명까지 넣을 수 있습니다")

@@ -66,8 +66,14 @@ public class GeneralController {
         if (patch.faction() != null) {
             general.setFaction(patch.faction());
         }
-        if (patch.cost() != null) {
-            general.setCost(patch.cost());
+        if (patch.level() != null) {
+            general.setLevel(patch.level());
+        }
+        if (patch.rarity() != null) {
+            general.setRarity(patch.rarity());
+        }
+        if (patch.season() != null) {
+            general.setSeason(patch.season());
         }
         if (patch.unitType() != null) {
             general.setUnitType(patch.unitType());

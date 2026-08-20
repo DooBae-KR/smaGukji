@@ -26,7 +26,7 @@ export function AnalysisPanel({ analysis }: { analysis: TeamAnalysis | null }) {
     )
   }
 
-  const { cost, faction, unitType, tactics, simulation } = analysis
+  const { roster, faction, unitType, tactics, simulation } = analysis
   const histogram = Object.entries(simulation.activationHistogram)
 
   return (
@@ -49,17 +49,13 @@ export function AnalysisPanel({ analysis }: { analysis: TeamAnalysis | null }) {
         </div>
       )}
 
-      <h3>코스트 · 세력</h3>
+      <h3>구성 · 세력</h3>
       <div className="stat-grid">
         <div className="stat">
-          <div className="k">코스트</div>
-          <div className={`v ${cost.overBudget ? 'bad' : ''}`}>
-            {cost.total} / {cost.limit}
-          </div>
-        </div>
-        <div className="stat">
           <div className="k">장수</div>
-          <div className="v">{cost.generalCount} / 3</div>
+          <div className={`v ${roster.generalCount < roster.slotCapacity ? 'bad' : ''}`}>
+            {roster.generalCount} / {roster.slotCapacity}
+          </div>
         </div>
         <div className="stat">
           <div className="k">세력</div>

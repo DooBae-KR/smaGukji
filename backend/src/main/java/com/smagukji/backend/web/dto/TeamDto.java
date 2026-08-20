@@ -3,7 +3,6 @@ package com.smagukji.backend.web.dto;
 import com.smagukji.backend.domain.Team;
 import com.smagukji.backend.domain.TeamSlot;
 import com.smagukji.backend.domain.TeamSlotTactic;
-import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -13,7 +12,6 @@ public record TeamDto(
         UUID id,
         String name,
         String description,
-        BigDecimal costLimit,
         List<SlotDto> slots,
         OffsetDateTime createdAt,
         OffsetDateTime updatedAt) {
@@ -31,7 +29,7 @@ public record TeamDto(
                 .map(TeamDto::toSlot)
                 .toList();
         return new TeamDto(team.getId(), team.getName(), team.getDescription(),
-                team.getCostLimit(), slots, team.getCreatedAt(), team.getUpdatedAt());
+                slots, team.getCreatedAt(), team.getUpdatedAt());
     }
 
     private static SlotDto toSlot(TeamSlot slot) {

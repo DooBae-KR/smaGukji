@@ -73,7 +73,13 @@ export function CatalogPage({ kind }: { kind: Kind }) {
                   <span className="name">{g.name}</span>
                   <span className="dim">
                     <span className={`faction-chip faction-${g.faction}`}>{g.factionLabel}</span>{' '}
-                    코스트 {g.cost}
+                    {g.rarity && (
+                      <span className={`rarity-chip rarity-${g.rarity}`}>
+                        {g.rarity === 'LEGEND' ? '전설' : '영웅'}
+                      </span>
+                    )}{' '}
+                    {g.season != null && <span className="chip">S{g.season}</span>}{' '}
+                    Lv.{g.level}
                   </span>
                   <span className="dim">
                     {g.campLabel ? `${g.campLabel} · ` : ''}

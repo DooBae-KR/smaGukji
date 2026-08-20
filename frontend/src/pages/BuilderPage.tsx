@@ -2,13 +2,23 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { analyzeDraft, listGenerals, listTactics } from '../api/endpoints'
 import { assetImageUrl } from '../api/client'
 import { EMPTY_OWNED, loadOwned } from '../api/collection'
-import type { OwnedCards } from '../api/collection'
+import type { CardKind, OwnedCards } from '../api/collection'
 import type { General, Tactic, TeamAnalysis, TeamRequest } from '../api/types'
+import type { CardItem } from '../components/CardGrid'
 import { AnalysisPanel } from '../components/AnalysisPanel'
+import { CardPickerModal } from './CardPickerModal'
 import { CollectionModal } from './CollectionModal'
 
 const SLOT_COUNT = 3
 const TACTICS_PER_SLOT = 2
+
+/**
+ * 시뮬레이션 턴 수.
+ *
+ * <p>천하결전 전투는 8턴에 끝난다. 고를 수 있는 값이 아니라 규칙이므로 입력칸을 두지 않는다.
+ * (예전에는 코스트 상한도 입력받았는데, 이 게임에는 코스트라는 개념 자체가 없다)
+ */
+const TURNS = 8
 
 interface SlotState {
   generalName: string
@@ -17,21 +27,27 @@ interface SlotState {
 
 const EMPTY_SLOT: SlotState = { generalName: '', tacticNames: ['', ''] }
 
+/** 지금 열려 있는 선택 팝업이 어느 칸을 위한 것인지. */
+interface PickerTarget {
+  slot: number
+  kind: CardKind
+  /** 전법일 때 몇 번째 칸인지 */
+  tacticIndex?: number
+}
+
 export function BuilderPage() {
   const [generals, setGenerals] = useState<General[]>([])
   const [tactics, setTactics] = useState<Tactic[]>([])
   const [slots, setSlots] = useState<SlotState[]>(() =>
     Array.from({ length: SLOT_COUNT }, () => ({ ...EMPTY_SLOT, tacticNames: ['', ''] })),
   )
-  const [costLimit, setCostLimit] = useState(15)
-  const [turns, setTurns] = useState(8)
   const [analysis, setAnalysis] = useState<TeamAnalysis | null>(null)
   const [error, setError] = useState<string | null>(null)
 
-  // 보유 목록. 등록해 둔 것이 있으면 그것만 고르게 하는 편이 실제 편성에 가깝다.
+  // 보유 목록. 편성은 «가진 것 중에서» 고르는 일이라 선택 팝업이 이걸 기준으로 걸러준다.
   const [owned, setOwned] = useState<OwnedCards>(EMPTY_OWNED)
   const [showCollection, setShowCollection] = useState(false)
-  const [onlyOwned, setOnlyOwned] = useState(false)
+  const [picker, setPicker] = useState<PickerTarget | null>(null)
 
   useEffect(() => {
     Promise.all([listGenerals(), listTactics(), loadOwned()])
@@ -39,22 +55,16 @@ export function BuilderPage() {
         setGenerals(g)
         setTactics(t)
         setOwned(o)
-        // 아직 아무것도 등록하지 않았다면 걸러봐야 빈 목록만 나온다.
-        // 하나라도 등록해 뒀다면 그걸 쓰려고 등록한 것이므로 기본으로 켠다.
-        setOnlyOwned(o.generals.size > 0 || o.tactics.size > 0)
       })
       .catch((e) => setError(e.message))
   }, [])
 
-  const generalByName = useMemo(
-    () => new Map(generals.map((g) => [g.name, g])),
-    [generals],
-  )
+  const generalByName = useMemo(() => new Map(generals.map((g) => [g.name, g])), [generals])
+  const tacticByName = useMemo(() => new Map(tactics.map((t) => [t.name, t])), [tactics])
 
   const request: TeamRequest = useMemo(
     () => ({
       name: '편성 미리보기',
-      costLimit,
       slots: slots
         .map((s, i) => ({
           position: i + 1,
@@ -63,7 +73,7 @@ export function BuilderPage() {
         }))
         .filter((s) => s.generalName !== ''),
     }),
-    [slots, costLimit],
+    [slots],
   )
 
   // 편성이 바뀔 때마다 서버에 분석을 요청한다. 연타를 막기 위해 짧게 디바운스한다.
@@ -75,7 +85,7 @@ export function BuilderPage() {
     }
     window.clearTimeout(timer.current)
     timer.current = window.setTimeout(() => {
-      analyzeDraft(request, turns)
+      analyzeDraft(request, TURNS)
         .then((a) => {
           setAnalysis(a)
           setError(null)
@@ -83,7 +93,7 @@ export function BuilderPage() {
         .catch((e) => setError(e.message))
     }, 250)
     return () => window.clearTimeout(timer.current)
-  }, [request, turns])
+  }, [request])
 
   const setSlot = useCallback((index: number, next: Partial<SlotState>) => {
     setSlots((prev) => prev.map((s, i) => (i === index ? { ...s, ...next } : s)))
@@ -92,23 +102,58 @@ export function BuilderPage() {
   /** 이미 다른 슬롯에 배치된 장수는 고를 수 없다. 백엔드도 같은 규칙으로 거절한다. */
   const usedGenerals = new Set(slots.map((s) => s.generalName).filter(Boolean))
 
-  /**
-   * 선택지를 보유한 것으로 좁힌다.
-   *
-   * 이미 골라둔 것은 보유 목록에 없더라도 남긴다. 빼버리면 select 가 빈칸이 되어
-   * 편성이 조용히 지워진 것처럼 보인다.
-   */
-  const visibleGenerals = useMemo(() => {
-    if (!onlyOwned) return generals
-    return generals.filter((g) => owned.generals.has(g.id) || usedGenerals.has(g.name))
-    // usedGenerals 는 slots 에서 파생되므로 slots 를 의존성으로 둔다.
-  }, [generals, owned, onlyOwned, slots])
+  const pickGeneral = (slotIndex: number, name: string) => {
+    setSlot(slotIndex, { generalName: name })
+    setPicker(null)
+  }
 
-  const visibleTactics = useMemo(() => {
-    if (!onlyOwned) return tactics
-    const picked = new Set(slots.flatMap((s) => s.tacticNames).filter(Boolean))
-    return tactics.filter((t) => owned.tactics.has(t.id) || picked.has(t.name))
-  }, [tactics, owned, onlyOwned, slots])
+  const pickTactic = (slotIndex: number, tacticIndex: number, name: string) => {
+    const next = [...slots[slotIndex].tacticNames]
+    next[tacticIndex] = name
+    setSlot(slotIndex, { tacticNames: next })
+    setPicker(null)
+  }
+
+  /** 선택 팝업에 넘길 후보 목록. 고를 수 없는 것은 이유와 함께 막아둔다. */
+  const pickerItems = (target: PickerTarget): CardItem[] => {
+    const slot = slots[target.slot]
+    if (target.kind === 'GENERAL') {
+      return generals.map((g) => ({
+        id: g.id,
+        name: g.name,
+        sub: [g.factionLabel, g.unitTypeLabel].filter(Boolean).join(' · '),
+        disabled: usedGenerals.has(g.name) && g.name !== slot.generalName,
+        title: usedGenerals.has(g.name) && g.name !== slot.generalName
+          ? '다른 칸에 이미 배치된 장수입니다'
+          : undefined,
+      }))
+    }
+    return tactics.map((t) => {
+      const takenHere =
+        slot.tacticNames.includes(t.name) && slot.tacticNames[target.tacticIndex ?? 0] !== t.name
+      return {
+        id: t.id,
+        name: t.name,
+        sub: t.categoryLabel ?? (t.dataComplete ? undefined : '상세 미입력'),
+        disabled: takenHere,
+        title: takenHere ? '이 장수에게 이미 넣은 전법입니다' : undefined,
+      }
+    })
+  }
+
+  const currentPickerId = (target: PickerTarget): string | undefined => {
+    const slot = slots[target.slot]
+    if (target.kind === 'GENERAL') {
+      return slot.generalName ? generalByName.get(slot.generalName)?.id : undefined
+    }
+    const name = slot.tacticNames[target.tacticIndex ?? 0]
+    return name ? tacticByName.get(name)?.id : undefined
+  }
+
+  const idToName = (kind: CardKind, id: string) =>
+    kind === 'GENERAL'
+      ? (generals.find((g) => g.id === id)?.name ?? '')
+      : (tactics.find((t) => t.id === id)?.name ?? '')
 
   return (
     <div className="builder">
@@ -116,54 +161,27 @@ export function BuilderPage() {
         {error && <div className="error-box">{error}</div>}
 
         <div className="toolbar">
-          <label>
-            <span className="field-label">코스트 상한</span>
-            <input
-              type="number"
-              value={costLimit}
-              min={1}
-              max={60}
-              step={0.5}
-              onChange={(e) => setCostLimit(Number(e.target.value))}
-              style={{ width: 90 }}
-            />
-          </label>
-          <label>
-            <span className="field-label">시뮬레이션 턴</span>
-            <input
-              type="number"
-              value={turns}
-              min={1}
-              max={50}
-              onChange={(e) => setTurns(Number(e.target.value))}
-              style={{ width: 90 }}
-            />
-          </label>
+          <span className="muted">전투 {TURNS}턴 기준으로 분석합니다.</span>
           <div className="spacer" />
-          <label className="checkline" title="등록해 둔 보유 카드만 선택지에 보여줍니다">
-            <input
-              type="checkbox"
-              checked={onlyOwned}
-              onChange={(e) => setOnlyOwned(e.target.checked)}
-            />
-            보유한 것만
-          </label>
           <button onClick={() => setShowCollection(true)}>
             📦 보유 등록
             <span className="muted"> ({owned.generals.size + owned.tactics.size})</span>
           </button>
           <button
             onClick={() =>
-              setSlots(Array.from({ length: SLOT_COUNT }, () => ({ ...EMPTY_SLOT, tacticNames: ['', ''] })))
+              setSlots(
+                Array.from({ length: SLOT_COUNT }, () => ({ ...EMPTY_SLOT, tacticNames: ['', ''] })),
+              )
             }
           >
             초기화
           </button>
         </div>
 
-        {onlyOwned && owned.generals.size === 0 && (
+        {owned.generals.size === 0 && (
           <p className="muted">
-            보유 장수가 하나도 등록돼 있지 않습니다. «📦 보유 등록» 에서 가진 카드를 켜주세요.
+            보유 장수가 아직 등록되지 않았습니다. «📦 보유 등록»에서 가진 카드를 켜두면
+            장수·전법 선택이 그 안에서만 나옵니다.
           </p>
         )}
 
@@ -192,53 +210,48 @@ export function BuilderPage() {
                   <div className="card-img empty">장수 미선택</div>
                 )}
 
-                <div>
-                  <span className="field-label">장수</span>
-                  <select
-                    value={slot.generalName}
-                    onChange={(e) => setSlot(i, { generalName: e.target.value })}
-                  >
-                    <option value="">— 선택 —</option>
-                    {visibleGenerals.map((g) => (
-                      <option
-                        key={g.id}
-                        value={g.name}
-                        disabled={usedGenerals.has(g.name) && g.name !== slot.generalName}
-                      >
-                        {g.name} ({g.factionLabel} · {g.cost})
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                <button
+                  className="slot-pick"
+                  onClick={() => setPicker({ slot: i, kind: 'GENERAL' })}
+                >
+                  {general ? (
+                    <>
+                      <span className="slot-pick-name">{general.name}</span>
+                      <span className="slot-pick-sub">
+                        {[general.unitTypeLabel, general.campLabel].filter(Boolean).join(' · ') ||
+                          '분류 미입력'}
+                      </span>
+                    </>
+                  ) : (
+                    <span className="slot-pick-empty">＋ 장수 선택</span>
+                  )}
+                </button>
 
-                {Array.from({ length: TACTICS_PER_SLOT }, (_, t) => (
-                  <div key={t}>
-                    <span className="field-label">전법 {t + 1}</span>
-                    <select
-                      value={slot.tacticNames[t] ?? ''}
+                {Array.from({ length: TACTICS_PER_SLOT }, (_, t) => {
+                  const name = slot.tacticNames[t] ?? ''
+                  const tactic = name ? tacticByName.get(name) : undefined
+                  return (
+                    <button
+                      key={t}
+                      className="slot-pick"
                       disabled={!slot.generalName}
-                      onChange={(e) => {
-                        const next = [...slot.tacticNames]
-                        next[t] = e.target.value
-                        setSlot(i, { tacticNames: next })
-                      }}
+                      title={!slot.generalName ? '장수를 먼저 고르세요' : undefined}
+                      onClick={() => setPicker({ slot: i, kind: 'TACTIC', tacticIndex: t })}
                     >
-                      <option value="">— 없음 —</option>
-                      {visibleTactics.map((tc) => (
-                        <option
-                          key={tc.id}
-                          value={tc.name}
-                          disabled={
-                            slot.tacticNames.includes(tc.name) && slot.tacticNames[t] !== tc.name
-                          }
-                        >
-                          {tc.name}
-                          {tc.dataComplete ? '' : ' (상세 미입력)'}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                ))}
+                      {tactic ? (
+                        <>
+                          <span className="slot-pick-name">{tactic.name}</span>
+                          <span className="slot-pick-sub">
+                            {tactic.categoryLabel ??
+                              (tactic.dataComplete ? '' : '상세 미입력')}
+                          </span>
+                        </>
+                      ) : (
+                        <span className="slot-pick-empty">＋ 전법 {t + 1}</span>
+                      )}
+                    </button>
+                  )
+                })}
               </div>
             )
           })}
@@ -246,6 +259,38 @@ export function BuilderPage() {
       </div>
 
       <AnalysisPanel analysis={analysis} />
+
+      {picker && (
+        <CardPickerModal
+          kind={picker.kind}
+          title={
+            picker.kind === 'GENERAL'
+              ? `${picker.slot === 0 ? '대장' : `부장 ${picker.slot}`} 장수 선택`
+              : `전법 ${(picker.tacticIndex ?? 0) + 1} 선택`
+          }
+          items={pickerItems(picker)}
+          ownedIds={picker.kind === 'GENERAL' ? owned.generals : owned.tactics}
+          currentId={currentPickerId(picker)}
+          onPick={(id) =>
+            picker.kind === 'GENERAL'
+              ? pickGeneral(picker.slot, idToName('GENERAL', id))
+              : pickTactic(picker.slot, picker.tacticIndex ?? 0, idToName('TACTIC', id))
+          }
+          onClear={
+            currentPickerId(picker)
+              ? () =>
+                  picker.kind === 'GENERAL'
+                    ? pickGeneral(picker.slot, '')
+                    : pickTactic(picker.slot, picker.tacticIndex ?? 0, '')
+              : undefined
+          }
+          onClose={() => setPicker(null)}
+          onOpenCollection={() => {
+            setPicker(null)
+            setShowCollection(true)
+          }}
+        />
+      )}
 
       {showCollection && (
         <CollectionModal

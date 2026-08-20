@@ -18,7 +18,9 @@ export function StrategyPage() {
     // 성향은 복수라 장수 한 명이 여러 항목에 잡힌다. 합계가 인원수와 다를 수 있다.
     const byDisposition = new Map<string, number>()
     let unitUnknown = 0
-    let costSum = 0
+    // 등급은 사람이 알려준 것만 채워져 있다. 카드 이미지로는 구분되지 않는다.
+    let legend = 0
+    let hero = 0
 
     for (const g of generals) {
       byFaction.set(g.factionLabel, (byFaction.get(g.factionLabel) ?? 0) + 1)
@@ -28,7 +30,8 @@ export function StrategyPage() {
       for (const d of g.dispositionLabels) {
         byDisposition.set(d, (byDisposition.get(d) ?? 0) + 1)
       }
-      costSum += g.cost
+      if (g.rarity === 'LEGEND') legend++
+      else if (g.rarity === 'HERO') hero++
     }
     const desc = (m: Map<string, number>) => [...m.entries()].sort((a, b) => b[1] - a[1])
     return {
@@ -38,7 +41,8 @@ export function StrategyPage() {
       byDisposition: desc(byDisposition),
       unitUnknown,
       classified: generals.filter((g) => g.campLabel).length,
-      avgCost: generals.length ? costSum / generals.length : 0,
+      legend,
+      hero,
     }
   }, [generals])
 
@@ -55,8 +59,12 @@ export function StrategyPage() {
           <div className="v">{generals.length}명</div>
         </div>
         <div className="stat">
-          <div className="k">평균 코스트</div>
-          <div className="v">{stats.avgCost.toFixed(1)}</div>
+          <div className="k">등급</div>
+          <div className={`v ${stats.legend + stats.hero === 0 ? 'bad' : ''}`}>
+            {stats.legend + stats.hero === 0
+              ? '미확인'
+              : `전설 ${stats.legend} · 영웅 ${stats.hero}`}
+          </div>
         </div>
         <div className="stat">
           <div className="k">분류 입력 완료</div>

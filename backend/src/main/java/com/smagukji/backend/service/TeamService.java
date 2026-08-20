@@ -62,7 +62,7 @@ public class TeamService {
 
     @Transactional
     public TeamDto create(TeamRequest request) {
-        Team team = new Team(request.name(), request.costLimit());
+        Team team = new Team(request.name());
         team.setDescription(request.description());
         applySlots(team, request);
         return TeamDto.from(teamRepository.save(team));
@@ -73,9 +73,6 @@ public class TeamService {
         Team team = findById(id);
         team.setName(request.name());
         team.setDescription(request.description());
-        if (request.costLimit() != null) {
-            team.setCostLimit(request.costLimit());
-        }
         team.clearSlots();
         applySlots(team, request);
         return TeamDto.from(teamRepository.save(team));
@@ -149,8 +146,7 @@ public class TeamService {
     /** 부대 없이 임시 편성을 즉석에서 분석한다. 저장하지 않는다. */
     @Transactional(readOnly = true)
     public TeamAnalysis analyzeDraft(TeamRequest request, int turns, int iterations, long seed) {
-        Team team = new Team(request.name() == null ? "임시 편성" : request.name(),
-                request.costLimit() == null ? new BigDecimal("15.0") : request.costLimit());
+        Team team = new Team(request.name() == null ? "임시 편성" : request.name());
         applySlots(team, request);
         return analysisService.analyze(team, turns, iterations, seededRandom(seed));
     }

@@ -25,7 +25,12 @@ export interface General {
   name: string
   faction: FactionCode
   factionLabel: string
-  cost: number
+  /** 카드에 적힌 레벨. 이 게임에는 코스트라는 개념이 없다 */
+  level: number
+  /** LEGEND 전설(노란 테두리) / HERO 영웅(보라 테두리). 비어 있으면 아직 확인되지 않음 */
+  rarity?: "LEGEND" | "HERO"
+  /** 시즌 장수 번호. 카드에 S 표시가 있는 장수 */
+  season?: number
   /** 병종: SHIELD 방패병 / SPEAR 창병 / BOW 궁병 / CAVALRY 기병 */
   unitType?: string
   unitTypeLabel?: string
@@ -74,7 +79,6 @@ export interface TeamSlotDraft {
 export interface TeamRequest {
   name: string
   description?: string
-  costLimit?: number
   slots: TeamSlotDraft[]
 }
 
@@ -90,7 +94,6 @@ export interface Team {
   id: string
   name: string
   description?: string
-  costLimit: number
   slots: TeamSlot[]
   createdAt: string
   updatedAt: string
@@ -109,12 +112,9 @@ export interface TeamAnalysis {
   grade: string
   scoreCoverage: number
   confidence: 'HIGH' | 'MEDIUM' | 'LOW'
-  cost: {
-    total: number
-    limit: number
-    remaining: number
-    overBudget: boolean
+  roster: {
     generalCount: number
+    slotCapacity: number
   }
   faction: {
     countByFaction: Record<string, number>

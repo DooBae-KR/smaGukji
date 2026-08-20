@@ -28,14 +28,15 @@ class TeamAnalysisServiceTest {
 
     private final TeamAnalysisService service = new TeamAnalysisService();
 
-    private static final BigDecimal COST_5 = new BigDecimal("5.0");
+    /** 카드에 적힌 레벨. 이 게임에는 코스트가 없어 편성 제약과는 무관하다. */
+    private static final BigDecimal LEVEL_5 = new BigDecimal("5.0");
 
-    private Team team(BigDecimal costLimit) {
-        return new Team("테스트 부대", costLimit);
+    private Team team() {
+        return new Team("테스트 부대");
     }
 
     private General general(String name, Faction faction) {
-        return new General(name, faction, COST_5);
+        return new General(name, faction, LEVEL_5);
     }
 
     private Tactic tactic(String name, TacticCategory category, String rate) {
@@ -55,7 +56,7 @@ class TeamAnalysisServiceTest {
     @Test
     @DisplayName("동일 세력 3인은 PURE 로 판정한다")
     void detectsPureFaction() {
-        Team team = team(new BigDecimal("15.0"));
+        Team team = team();
         team.addSlot(new TeamSlot(1, general("관우", Faction.SHU)));
         team.addSlot(new TeamSlot(2, general("장비", Faction.SHU)));
         team.addSlot(new TeamSlot(3, general("조운", Faction.SHU)));
@@ -70,7 +71,7 @@ class TeamAnalysisServiceTest {
     @Test
     @DisplayName("세력이 전부 다르면 SCATTERED 로 판정하고 경고한다")
     void detectsScatteredFaction() {
-        Team team = team(new BigDecimal("15.0"));
+        Team team = team();
         team.addSlot(new TeamSlot(1, general("관우", Faction.SHU)));
         team.addSlot(new TeamSlot(2, general("조조", Faction.WEI)));
         team.addSlot(new TeamSlot(3, general("손권", Faction.WU)));
@@ -82,24 +83,34 @@ class TeamAnalysisServiceTest {
     }
 
     @Test
-    @DisplayName("코스트 상한을 넘으면 ERROR 를 낸다")
-    void flagsCostOverBudget() {
-        Team team = team(new BigDecimal("10.0"));
-        team.addSlot(new TeamSlot(1, general("관우", Faction.SHU)));
-        team.addSlot(new TeamSlot(2, general("장비", Faction.SHU)));
-        team.addSlot(new TeamSlot(3, general("조운", Faction.SHU)));
+    @DisplayName("자리가 비면 알려주고, 다 채우면 알리지 않는다")
+    void reportsEmptySlots() {
+        Team partial = team();
+        partial.addSlot(new TeamSlot(1, general("관우", Faction.SHU)));
 
-        TeamAnalysis result = service.analyze(team, 8, 1000, rng());
+        TeamAnalysis one = service.analyze(partial, 8, 1000, rng());
+        assertEquals(1, one.roster().generalCount());
+        assertEquals(3, one.roster().slotCapacity());
+        assertTrue(hasCode(one, "SLOT_EMPTY"));
 
-        assertTrue(result.cost().overBudget());
-        assertEquals(0, new BigDecimal("15.0").compareTo(result.cost().total()));
-        assertTrue(hasCode(result, "COST_OVER"));
+        Team full = team();
+        full.addSlot(new TeamSlot(1, general("관우", Faction.SHU)));
+        full.addSlot(new TeamSlot(2, general("장비", Faction.SHU)));
+        full.addSlot(new TeamSlot(3, general("조운", Faction.SHU)));
+
+        TeamAnalysis three = service.analyze(full, 8, 1000, rng());
+        assertEquals(3, three.roster().generalCount());
+        assertFalse(hasCode(three, "SLOT_EMPTY"));
+
+        // 장수 수 말고는 같은 편성인데, 자리를 다 채운 쪽이 더 높아야 한다.
+        // 예전에는 «코스트 초과 아님» 으로 모두에게 17점을 줘서 이 차이가 흐려졌다.
+        assertTrue(three.score() > one.score());
     }
 
     @Test
     @DisplayName("발동확률 100% 전법 하나면 매 턴 반드시 발동한다")
     void simulatesCertainTrigger() {
-        Team team = team(new BigDecimal("15.0"));
+        Team team = team();
         TeamSlot slot = new TeamSlot(1, general("관우", Faction.SHU));
         slot.addTactic(new TeamSlotTactic(1, tactic("확정발동", TacticCategory.ACTIVE, "100")));
         team.addSlot(slot);
@@ -114,7 +125,7 @@ class TeamAnalysisServiceTest {
     @Test
     @DisplayName("발동확률 50% 전법 2개의 기대 발동 수는 1.0 에 수렴한다")
     void simulatesExpectedActivations() {
-        Team team = team(new BigDecimal("15.0"));
+        Team team = team();
         TeamSlot slot = new TeamSlot(1, general("관우", Faction.SHU));
         slot.addTactic(new TeamSlotTactic(1, tactic("반반1", TacticCategory.ACTIVE, "50")));
         slot.addTactic(new TeamSlotTactic(2, tactic("반반2", TacticCategory.ACTIVE, "50")));
@@ -130,7 +141,7 @@ class TeamAnalysisServiceTest {
     @Test
     @DisplayName("지휘 전법은 확률 판정 없이 항상 적용된다")
     void commandTacticAlwaysApplies() {
-        Team team = team(new BigDecimal("15.0"));
+        Team team = team();
         TeamSlot slot = new TeamSlot(1, general("관우", Faction.SHU));
         // 지휘는 발동확률이 없어도 상시 적용이라 평가 대상이다.
         slot.addTactic(new TeamSlotTactic(1, tactic("지휘전법", TacticCategory.COMMAND, null)));
@@ -146,7 +157,7 @@ class TeamAnalysisServiceTest {
     @Test
     @DisplayName("데이터가 비어 있으면 시뮬레이션에서 제외하고 confidence 를 LOW 로 낮춘다")
     void missingDataLowersConfidence() {
-        Team team = team(new BigDecimal("15.0"));
+        Team team = team();
         TeamSlot slot = new TeamSlot(1, general("관우", Faction.SHU));
         slot.addTactic(new TeamSlotTactic(1, new Tactic("미입력전법")));
         team.addSlot(slot);
@@ -164,7 +175,7 @@ class TeamAnalysisServiceTest {
     @Test
     @DisplayName("데이터가 모두 채워지면 confidence 가 HIGH 가 된다")
     void completeDataGivesHighConfidence() {
-        Team team = team(new BigDecimal("15.0"));
+        Team team = team();
         for (int i = 1; i <= 3; i++) {
             General g = general("장수" + i, Faction.SHU);
             g.setUnitType(UnitType.CAVALRY);
@@ -186,7 +197,7 @@ class TeamAnalysisServiceTest {
     @Test
     @DisplayName("같은 전법을 여러 장수가 장착하면 중복으로 잡는다")
     void detectsDuplicateTactics() {
-        Team team = team(new BigDecimal("15.0"));
+        Team team = team();
         TeamSlot a = new TeamSlot(1, general("관우", Faction.SHU));
         a.addTactic(new TeamSlotTactic(1, tactic("강습", TacticCategory.ACTIVE, "80")));
         TeamSlot b = new TeamSlot(2, general("장비", Faction.SHU));
@@ -204,7 +215,7 @@ class TeamAnalysisServiceTest {
     @Test
     @DisplayName("같은 seed 면 결과가 항상 같다")
     void isDeterministicForSameSeed() {
-        Team team = team(new BigDecimal("15.0"));
+        Team team = team();
         TeamSlot slot = new TeamSlot(1, general("관우", Faction.SHU));
         slot.addTactic(new TeamSlotTactic(1, tactic("반반", TacticCategory.ACTIVE, "50")));
         team.addSlot(slot);
@@ -219,7 +230,7 @@ class TeamAnalysisServiceTest {
     @Test
     @DisplayName("장수 4명을 넣으려 하면 거부한다")
     void rejectsFourthGeneral() {
-        Team team = team(new BigDecimal("20.0"));
+        Team team = team();
         for (int i = 1; i <= 3; i++) {
             team.addSlot(new TeamSlot(i, general("장수" + i, Faction.SHU)));
         }

@@ -20,7 +20,7 @@ import java.util.UUID;
 /**
  * 장수.
  *
- * <p>name / faction / cost 는 카드 이미지에서 판독한 값이라 신뢰할 수 있다.
+ * <p>name / faction / level 은 카드 이미지에서 판독한 값이라 신뢰할 수 있다.
  * unitType 과 각 수치는 초기값이 null 이며 별도 입력이 필요하다.
  */
 @Entity
@@ -40,16 +40,26 @@ public class General {
     @Column(name = "faction", nullable = false, columnDefinition = "text")
     private Faction faction;
 
-    @Column(name = "cost", nullable = false, precision = 4, scale = 1)
-    private BigDecimal cost;
+    @Column(name = "level", nullable = false, precision = 4, scale = 1)
+    private BigDecimal level;
 
     /** 카드 아이콘 판독 불가로 초기값 null. */
     @Enumerated(EnumType.STRING)
     @Column(name = "unit_type", columnDefinition = "text")
     private UnitType unitType;
 
+    /**
+     * 등급. LEGEND 전설(노란 테두리) / HERO 영웅(보라 테두리).
+     *
+     * <p>비어 있으면 «아직 확인되지 않음»이다. 카드 이미지로는 구분되지 않아
+     * (54장의 테두리 색이 사실상 한 가지로 측정된다) 사람이 알려준 것만 채운다.
+     */
     @Column(name = "rarity", columnDefinition = "text")
     private String rarity;
+
+    /** 시즌 장수 번호. 카드에 «S» 가 붙은 장수. 비어 있으면 시즌 구분이 없는 기본 장수다. */
+    @Column(name = "season")
+    private Integer season;
 
     /** 진영(배치). 세력과는 다른 축이다. */
     @Enumerated(EnumType.STRING)
@@ -98,10 +108,10 @@ public class General {
         // JPA 전용
     }
 
-    public General(String name, Faction faction, BigDecimal cost) {
+    public General(String name, Faction faction, BigDecimal level) {
         this.name = name;
         this.faction = faction;
-        this.cost = cost;
+        this.level = level;
     }
 
     @PrePersist
@@ -132,12 +142,12 @@ public class General {
         this.faction = faction;
     }
 
-    public BigDecimal getCost() {
-        return cost;
+    public BigDecimal getLevel() {
+        return level;
     }
 
-    public void setCost(BigDecimal cost) {
-        this.cost = cost;
+    public void setLevel(BigDecimal level) {
+        this.level = level;
     }
 
     public UnitType getUnitType() {
@@ -154,6 +164,14 @@ public class General {
 
     public void setRarity(String rarity) {
         this.rarity = rarity;
+    }
+
+    public Integer getSeason() {
+        return season;
+    }
+
+    public void setSeason(Integer season) {
+        this.season = season;
     }
 
     public Camp getCamp() {

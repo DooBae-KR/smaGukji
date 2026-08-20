@@ -47,7 +47,7 @@ public class TeamAnalysisService {
 
         List<TeamAnalysis.Finding> findings = new ArrayList<>();
 
-        TeamAnalysis.CostAnalysis cost = analyzeCost(team, generals, findings);
+        TeamAnalysis.RosterAnalysis roster = analyzeRoster(generals, findings);
         TeamAnalysis.FactionAnalysis faction = analyzeFaction(generals, findings);
         TeamAnalysis.UnitTypeAnalysis unitType = analyzeUnitType(generals, findings);
         TeamAnalysis.TacticAnalysis tacticAnalysis = analyzeTactics(slots, equipped, findings);
@@ -58,7 +58,7 @@ public class TeamAnalysisService {
             findings.add(TeamAnalysis.Finding.error("EMPTY_TEAM", "부대에 장수가 한 명도 없습니다."));
         }
 
-        Scored scored = score(cost, faction, tacticAnalysis, simulation, unitType);
+        Scored scored = score(roster, faction, tacticAnalysis, simulation, unitType);
         String confidence = confidence(scored.coverage());
         if (!"HIGH".equals(confidence)) {
             findings.add(TeamAnalysis.Finding.warn("SCORE_LOW_CONFIDENCE",
@@ -69,7 +69,7 @@ public class TeamAnalysisService {
 
         return new TeamAnalysis(team.getId(), team.getName(), scored.score(), grade(scored.score()),
                 round(scored.coverage(), 1), confidence,
-                cost, faction, unitType, tacticAnalysis, simulation, sortFindings(findings));
+                roster, faction, unitType, tacticAnalysis, simulation, sortFindings(findings));
     }
 
     /** 점수와, 그 점수가 채점 모델의 몇 %를 실제로 평가한 것인지. */
@@ -77,28 +77,16 @@ public class TeamAnalysisService {
     }
 
     // ---------------------------------------------------------------
-    // 코스트
+    // 편성 구성
     // ---------------------------------------------------------------
 
-    private TeamAnalysis.CostAnalysis analyzeCost(Team team, List<General> generals,
+    private TeamAnalysis.RosterAnalysis analyzeRoster(List<General> generals,
             List<TeamAnalysis.Finding> findings) {
-        BigDecimal total = generals.stream()
-                .map(General::getCost)
-                .filter(Objects::nonNull)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-        BigDecimal limit = team.getCostLimit();
-        BigDecimal remaining = limit.subtract(total);
-        boolean over = remaining.signum() < 0;
-
-        if (over) {
-            findings.add(TeamAnalysis.Finding.error("COST_OVER",
-                    "코스트 %s / %s 로 상한을 %s 초과했습니다.".formatted(total, limit, remaining.abs())));
-        } else if (remaining.compareTo(BigDecimal.ZERO) > 0 && generals.size() < Team.MAX_SLOTS) {
-            findings.add(TeamAnalysis.Finding.info("COST_ROOM",
-                    "코스트가 %s 남아 있고 슬롯도 비어 있습니다.".formatted(remaining)));
+        if (generals.size() < Team.MAX_SLOTS) {
+            findings.add(TeamAnalysis.Finding.info("SLOT_EMPTY",
+                    "장수 자리가 %d칸 비어 있습니다.".formatted(Team.MAX_SLOTS - generals.size())));
         }
-
-        return new TeamAnalysis.CostAnalysis(total, limit, remaining, over, generals.size());
+        return new TeamAnalysis.RosterAnalysis(generals.size(), Team.MAX_SLOTS);
     }
 
     // ---------------------------------------------------------------
@@ -339,17 +327,21 @@ public class TeamAnalysisService {
      * <p>대신 실제로 평가한 배점 비중(coverage)을 함께 돌려준다. 이것이 없으면 데이터가 없을수록
      * 점수가 높아지는 착시가 생긴다.
      */
-    private Scored score(TeamAnalysis.CostAnalysis cost, TeamAnalysis.FactionAnalysis faction,
+    private Scored score(TeamAnalysis.RosterAnalysis roster, TeamAnalysis.FactionAnalysis faction,
             TeamAnalysis.TacticAnalysis tactics, TeamAnalysis.SimulationSummary simulation,
             TeamAnalysis.UnitTypeAnalysis unitType) {
         double earned = 0;
         double possible = 0;
 
         // 편성 충실도 (35점) - 항상 채점 가능
+        //
+        // 예전에는 이 35점 중 17점을 «코스트 상한을 넘지 않았는가» 로 줬다.
+        // 그런데 이 게임에는 코스트가 없다. 게다가 모든 장수가 같은 값이라 초과가
+        // 일어날 수 없어서, 사실상 «모두에게 주는 17점» 이었다. 없는 개념에 주는 점수라
+        // 걷어내고 자리를 채운 비율에 전부 싣는다.
         possible += 35;
-        double fill = cost.generalCount() / (double) Team.MAX_SLOTS;
-        earned += 18 * fill;
-        earned += cost.overBudget() ? 0 : 17;
+        double fill = roster.generalCount() / (double) Team.MAX_SLOTS;
+        earned += 35 * fill;
 
         // 세력 응집도 (25점) - 항상 채점 가능
         possible += 25;
@@ -374,7 +366,7 @@ public class TeamAnalysisService {
         }
 
         // 병종 일관성 (10점) - 병종이 전부 입력됐을 때만 채점
-        if (unitType.unknownCount() == 0 && cost.generalCount() > 0) {
+        if (unitType.unknownCount() == 0 && roster.generalCount() > 0) {
             possible += 10;
             earned += unitType.uniform() ? 10 : 5;
         }

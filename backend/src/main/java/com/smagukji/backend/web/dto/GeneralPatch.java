@@ -14,7 +14,9 @@ import java.util.List;
  */
 public record GeneralPatch(
         Faction faction,
-        BigDecimal cost,
+        BigDecimal level,
+        String rarity,
+        Integer season,
         UnitType unitType,
         Camp camp,
         List<Disposition> dispositions,
