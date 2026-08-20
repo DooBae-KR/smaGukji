@@ -21,6 +21,22 @@
 
 ## 방법 1 — Render (가장 간단, 무료 플랜 있음)
 
+### 1-A. 스크립트로 (브라우저 없이)
+
+저장소가 public 이라 GitHub App 연동 없이 API 만으로 배포됩니다.
+
+```bash
+# 1) https://render.com 가입 (GitHub 계정으로 하면 빠름)
+# 2) Account Settings → API Keys → Create API Key
+# 3) .env 에 추가:  RENDER_API_KEY=rnd_xxxxxxxx
+./render-deploy.sh
+```
+
+서비스 생성, 환경변수 주입, 빌드 대기, 헬스체크까지 한 번에 처리합니다.
+이미 서비스가 있으면 환경변수를 갱신하고 재배포만 겁니다.
+
+### 1-B. 대시보드에서 직접
+
 1. https://render.com 가입 후 GitHub 저장소 연결
 2. **New → Blueprint** → 이 저장소 선택 → [render.yaml](render.yaml)을 자동으로 읽습니다
 3. **Environment** 탭에서 값 3개를 직접 입력 (`sync: false`로 표시된 항목)
