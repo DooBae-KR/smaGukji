@@ -57,7 +57,16 @@ fly deploy
 
 설정은 [fly.toml](fly.toml)에 있습니다. `min_machines_running = 0`이라 안 쓸 때는 멈춰 비용이 들지 않습니다.
 
-## 방법 3 — Docker (직접 서버 / NAS / VPS)
+## 방법 3 — Docker (로컬 / 직접 서버 / NAS / VPS)
+
+가장 간단한 방법:
+
+```bash
+./docker-run.sh           # 이미지를 빌드해서 실행
+./docker-run.sh --pull    # CI 가 GHCR 에 올려둔 이미지를 받아서 실행 (빠름)
+```
+
+직접 명령으로 하려면:
 
 ```bash
 docker build -t smagukji .
