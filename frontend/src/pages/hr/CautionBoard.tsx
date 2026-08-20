@@ -4,12 +4,11 @@ import type { CautionEntry } from '../../api/hr'
 
 /** 주의 화면. 유저를 검색해서 그 사람의 주의 사유 이력을 본다. */
 export function CautionBoard({
-  server,
-  alliance,
+  allianceId,
   onChanged,
 }: {
-  server: string
-  alliance: string
+  /** 조회 결과에서 받은 동맹 id. 실제 접근 가능 여부는 DB 정책이 판단한다. */
+  allianceId: string
   onChanged?: () => void
 }) {
   const [entries, setEntries] = useState<CautionEntry[]>([])
@@ -24,7 +23,7 @@ export function CautionBoard({
   const reload = useCallback(() => {
     const seq = ++seqRef.current
     setBusy(true)
-    hr.listCautions(server, alliance, query || undefined, onlyOpen)
+    hr.listCautions(allianceId, query || undefined, onlyOpen)
       .then((e) => {
         if (seq !== seqRef.current) return
         setEntries(e)
@@ -37,7 +36,7 @@ export function CautionBoard({
       .finally(() => {
         if (seq === seqRef.current) setBusy(false)
       })
-  }, [server, alliance, query, onlyOpen])
+  }, [allianceId, query, onlyOpen])
 
   // 검색어 입력마다 서버를 때리지 않도록 짧게 지연시킨다.
   useEffect(() => {
@@ -47,7 +46,7 @@ export function CautionBoard({
 
   const resolve = async (noteId: string) => {
     try {
-      await hr.resolveCaution(server, alliance, noteId)
+      await hr.resolveCaution(noteId)
       reload()
       // 그리드의 미해제 배지·주의 표시도 함께 갱신한다.
       onChanged?.()
@@ -63,7 +62,7 @@ export function CautionBoard({
       return
     }
     try {
-      await hr.deleteCaution(server, alliance, noteId)
+      await hr.deleteCaution(noteId)
       reload()
       onChanged?.()
     } catch (e) {

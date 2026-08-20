@@ -1,10 +1,9 @@
 import { useCallback, useEffect, useState } from 'react'
 import './App.css'
-import { ping } from './api/endpoints'
  import * as hr from './api/hr'
 import { ROLE_LABEL, can } from './api/hr'
 import type { LoginResult, MenuItem } from './api/hr'
-import { LoadingScreen } from './components/LoadingScreen'
+import { supabaseConfigured } from './lib/supabase'
  import { AdminPanel } from './pages/AdminPanel'
 import { AgentPage } from './pages/AgentPage'
 import { BuilderPage } from './pages/BuilderPage'
@@ -18,56 +17,27 @@ import { StrategyPage } from './pages/StrategyPage'
 /** 관리자 화면은 DB 메뉴가 아니라 세션 역할로만 붙는다. */
 const ADMIN_ROUTE = '/admin'
 
-/** 백엔드가 깰 때까지 기다리는 최대 시간. Render 무료 플랜 콜드 스타트가 1분 남짓이다. */
-const BOOT_TIMEOUT_SECONDS = 90
-
 export default function App() {
   const [session, setSession] = useState<LoginResult | null>(null)
   const [menus, setMenus] = useState<MenuItem[]>([])
   const [route, setRoute] = useState('')
   const [error, setError] = useState<string | null>(null)
 
-  // 부팅 상태. 백엔드가 응답할 때까지 로딩 화면을 보여준다.
-  const [booted, setBooted] = useState(false)
-  const [bootError, setBootError] = useState<string | null>(null)
-  const [elapsed, setElapsed] = useState(0)
-  const [bootAttempt, setBootAttempt] = useState(0)
+  // 저장된 로그인을 되살리는 동안만 잠깐 기다린다.
+  //
+  // 예전에는 여기서 Render 가 깨어날 때까지(최대 90초) 로딩 화면을 띄웠다.
+  // 이제 로그인과 인사 데이터는 항상 켜져 있는 Supabase 로 가므로 기다릴 일이 없다.
+  // Render 는 «덱 분석» 을 누른 순간에만 필요하고, 그 대기는 해당 화면 안에서 보여준다.
+  const [restoring, setRestoring] = useState(true)
 
   useEffect(() => {
     let cancelled = false
-    setBooted(false)
-    setBootError(null)
-    setElapsed(0)
-
-    const startedAt = Date.now()
-    const ticker = window.setInterval(() => {
-      if (!cancelled) setElapsed(Math.floor((Date.now() - startedAt) / 1000))
-    }, 1000)
-
-    const wait = async () => {
-      // 잠든 서버가 깨어날 때까지 재시도한다. 한 번 실패했다고 포기하면
-      // 무료 플랜에서는 사실상 항상 오류 화면이 뜬다.
-      while (!cancelled) {
-        if (await ping()) {
-          if (!cancelled) setBooted(true)
-          return
-        }
-        if ((Date.now() - startedAt) / 1000 > BOOT_TIMEOUT_SECONDS) {
-          if (!cancelled) {
-            setBootError(`${BOOT_TIMEOUT_SECONDS}초 동안 응답이 없습니다. 서버가 내려가 있을 수 있습니다.`)
-          }
-          return
-        }
-        await new Promise((r) => setTimeout(r, 2000))
-      }
-    }
-    wait()
-
-    return () => {
-      cancelled = true
-      window.clearInterval(ticker)
-    }
-  }, [bootAttempt])
+    hr.restoreSession()
+      .then((s) => { if (!cancelled) setSession(s) })
+      .catch(() => { /* 세션이 없으면 로그인 화면으로 간다 */ })
+      .finally(() => { if (!cancelled) setRestoring(false) })
+    return () => { cancelled = true }
+  }, [])
 
   const role = session?.role
   const isAdmin = can.manageSystem(role)
@@ -95,24 +65,26 @@ export default function App() {
 
   const logout = async () => {
     await hr.logout().catch(() => undefined)
-    hr.clearToken()
     setSession(null)
   }
 
-  // 백엔드가 깨어나기 전에는 로딩 화면만 보여준다.
-  // 이게 없으면 콜드 스타트 동안 로그인 화면이 뜬 채로 모든 요청이 실패해
-  // 사용자는 앱이 고장난 줄 안다.
-  if (!booted) {
+  // 설정이 빠졌으면 그것부터 알려준다. 이게 없으면 «로그인이 안 된다» 로만 보인다.
+  if (!supabaseConfigured) {
     return (
-      <LoadingScreen
-        elapsedSeconds={elapsed}
-        error={bootError}
-        onRetry={() => setBootAttempt((n) => n + 1)}
-      />
+      <div className="app">
+        <header className="app-header">
+          <h1>천하결전 오피스</h1>
+        </header>
+        <div className="error-box">
+          Supabase 설정이 없습니다. 배포 환경변수에 <code>VITE_SUPABASE_URL</code> 과{' '}
+          <code>VITE_SUPABASE_ANON_KEY</code> 를 넣고 다시 빌드해 주세요.
+        </div>
+      </div>
     )
   }
 
   // 로그인 전에는 다른 화면을 아예 만들지 않는다.
+  // 세션 복원은 Supabase 만 보므로 대개 눈에 띄지 않게 끝난다.
   if (!session) {
     return (
       <div className="app">
@@ -120,7 +92,8 @@ export default function App() {
           <h1>천하결전 오피스</h1>
           <span className="sub">덱 시뮬레이션 · 동맹 인사관리</span>
         </header>
-        <HrLogin onLoggedIn={setSession} />
+        {restoring ? <div className="panel"><p className="muted">불러오는 중…</p></div>
+                   : <HrLogin onLoggedIn={setSession} />}
       </div>
     )
   }

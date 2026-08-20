@@ -1,4 +1,16 @@
-import { API_BASE, request } from './client'
+import { API_BASE, assetImageUrl, request } from './client'
+import { supabase } from '../lib/supabase'
+import {
+  ABILITY_TYPE_LABEL,
+  CAMP_LABEL,
+  DISPOSITION_LABEL,
+  FACTION_LABEL,
+  TACTIC_CATEGORY_LABEL,
+  TACTIC_QUALITY_LABEL,
+  UNIT_TYPE_LABEL,
+  isTacticDataComplete,
+  label,
+} from './labels'
 import type {
   AssetImportResult,
   Completeness,
@@ -10,10 +22,82 @@ import type {
   TeamRequest,
 } from './types'
 
+/**
+ * 읽기는 Supabase, 쓰기·계산은 Render.
+ *
+ * <p>장수·전법 «조회»가 Render 에 묶여 있으면 무료 인스턴스가 잠든 동안 덱 편성 화면이
+ * 카드 목록조차 못 그린다. 동맹원에게는 그게 유일한 화면이라 앱이 죽은 것처럼 보인다.
+ * 그래서 조회는 항상 켜져 있는 Supabase 에서 직접 읽는다.
+ *
+ * <p>반대로 수정·불러오기·시뮬레이션은 Render 에 남는다. 버튼을 눌러서 하는 일이라
+ * 기다림을 납득할 수 있고, 파싱과 계산에 서버가 필요하다.
+ */
+
+function unwrap<T>(res: { data: T | null; error: unknown }): T {
+  if (res.error) throw new Error((res.error as { message?: string }).message ?? '조회 실패')
+  return res.data as T
+}
+
 // --- 장수 ---
 
-export function listGenerals(faction?: FactionCode): Promise<General[]> {
-  return request<General[]>(`/generals${faction ? `?faction=${faction}` : ''}`)
+interface GeneralRow {
+  id: string
+  name: string
+  faction: string
+  cost: number
+  unit_type: string | null
+  camp: string | null
+  dispositions: string[] | null
+  might: number | null
+  intellect: number | null
+  leadership: number | null
+  initiative: number | null
+  stat_level: number
+  signature_tactic_id: string | null
+  note: string | null
+}
+
+export async function listGenerals(faction?: FactionCode): Promise<General[]> {
+  let query = supabase
+    .from('general')
+    .select('id, name, faction, cost, unit_type, camp, dispositions, might, intellect, leadership, initiative, stat_level, signature_tactic_id, note')
+    .order('name')
+  if (faction) query = query.eq('faction', faction)
+
+  const [generals, tactics] = await Promise.all([
+    query,
+    supabase.from('tactic').select('id, name'),
+  ])
+
+  const rows = unwrap(generals) as GeneralRow[]
+  // 고유전법 이름은 따로 읽어 붙인다. 관계 임베딩보다 이 편이 예측하기 쉽다.
+  const tacticName = new Map(
+    (unwrap(tactics) as { id: string; name: string }[]).map((t) => [t.id, t.name]),
+  )
+
+  return rows.map((r) => ({
+    id: r.id,
+    name: r.name,
+    faction: r.faction as FactionCode,
+    factionLabel: label(FACTION_LABEL, r.faction) ?? r.faction,
+    cost: r.cost,
+    unitType: r.unit_type ?? undefined,
+    unitTypeLabel: label(UNIT_TYPE_LABEL, r.unit_type),
+    camp: r.camp ?? undefined,
+    campLabel: label(CAMP_LABEL, r.camp),
+    dispositions: r.dispositions ?? [],
+    dispositionLabels: (r.dispositions ?? []).map((d) => label(DISPOSITION_LABEL, d) ?? d),
+    might: r.might ?? undefined,
+    intellect: r.intellect ?? undefined,
+    leadership: r.leadership ?? undefined,
+    initiative: r.initiative ?? undefined,
+    statLevel: r.stat_level,
+    signatureTacticName: r.signature_tactic_id
+      ? tacticName.get(r.signature_tactic_id)
+      : undefined,
+    note: r.note ?? undefined,
+    imageUrl: assetImageUrl('GENERAL', r.name) ?? '',
+  }))
 }
 
 export function patchGeneral(id: string, patch: Partial<General>): Promise<General> {
@@ -25,8 +109,44 @@ export function patchGeneral(id: string, patch: Partial<General>): Promise<Gener
 
 // --- 전법 ---
 
-export function listTactics(): Promise<Tactic[]> {
-  return request<Tactic[]>('/tactics')
+interface TacticRow {
+  id: string
+  name: string
+  category: string | null
+  ability_type: string | null
+  quality: string | null
+  trigger_rate: number | null
+  target_count: number | null
+  effect_text: string | null
+  role_tags: string[] | null
+  source: string | null
+}
+
+export async function listTactics(): Promise<Tactic[]> {
+  const rows = unwrap(
+    await supabase
+      .from('tactic')
+      .select('id, name, category, ability_type, quality, trigger_rate, target_count, effect_text, role_tags, source')
+      .order('name'),
+  ) as TacticRow[]
+
+  return rows.map((r) => ({
+    id: r.id,
+    name: r.name,
+    category: r.category ?? undefined,
+    categoryLabel: label(TACTIC_CATEGORY_LABEL, r.category),
+    abilityType: r.ability_type ?? undefined,
+    abilityTypeLabel: label(ABILITY_TYPE_LABEL, r.ability_type),
+    quality: r.quality ?? undefined,
+    qualityLabel: label(TACTIC_QUALITY_LABEL, r.quality),
+    triggerRate: r.trigger_rate ?? undefined,
+    targetCount: r.target_count ?? undefined,
+    effectText: r.effect_text ?? undefined,
+    roleTags: r.role_tags ?? [],
+    source: r.source ?? undefined,
+    dataComplete: isTacticDataComplete(r.category, r.trigger_rate),
+    imageUrl: assetImageUrl('TACTIC', r.name) ?? '',
+  }))
 }
 
 export function tacticCompleteness(): Promise<Completeness> {

@@ -60,11 +60,19 @@ export function AdminPanel({ onMenusChanged }: { onMenusChanged: () => void }) {
     }
   }
 
-  const removeAccount = async (a: AccountSummary) => {
-    if (!window.confirm(`계정 "${a.loginId}" 를 삭제할까요? 되돌릴 수 없습니다.`)) return
+  /**
+   * 계정을 지우지 않고 «사용 중지»한다.
+   *
+   * 지우면 그 사람이 남긴 주의 기록의 작성자를 알 수 없게 된다.
+   * (완전 삭제는 Supabase 관리자 키가 있어야 해서 브라우저에서 할 수 없다)
+   */
+  const toggleAccountActive = async (a: AccountSummary) => {
+    const next = !a.active
+    const word = next ? '다시 사용' : '사용 중지'
+    if (!window.confirm(`계정 "${a.loginId}" 를 ${word} 처리할까요?`)) return
     try {
-      await hr.deleteAccount(a.id)
-      setNotice(`${a.loginId} 삭제됨`)
+      await hr.setAccountActive(a.id, next)
+      setNotice(`${a.loginId} ${word}됨`)
       reload()
     } catch (e) {
       setError((e as Error).message)
@@ -195,7 +203,15 @@ export function AdminPanel({ onMenusChanged }: { onMenusChanged: () => void }) {
                   {a.lastLoginAt ? new Date(a.lastLoginAt).toLocaleString('ko-KR') : '없음'}
                 </td>
                 <td style={{ textAlign: 'right' }}>
-                  <button className="danger" onClick={() => removeAccount(a)}>삭제</button>
+                  <button
+                    className={a.active ? 'danger' : ''}
+                    onClick={() => toggleAccountActive(a)}
+                    title={a.active
+                      ? '로그인을 막습니다. 기록은 남습니다'
+                      : '다시 로그인할 수 있게 합니다'}
+                  >
+                    {a.active ? '사용 중지' : '사용 재개'}
+                  </button>
                 </td>
               </tr>
             ))}

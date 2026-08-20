@@ -32,6 +32,20 @@ export async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return (await res.json()) as T
 }
 
-export function assetImageUrl(category: 'GENERAL' | 'TACTIC', name: string): string {
-  return `${API_BASE}/assets/${category}/${encodeURIComponent(name)}/image`
+import cardImages from '../generated/card-images.json'
+
+/**
+ * 카드 이미지 주소.
+ *
+ * <p>예전에는 Render 가 DB 에서 꺼내 내려줬다. 그러면 무료 인스턴스가 잠든 동안
+ * 카드 131장이 전부 깨져 화면이 통째로 망가진 것처럼 보인다.
+ * 지금은 빌드에 포함된 정적 파일을 쓰므로 Render 와 무관하게 항상 뜬다.
+ *
+ * <p>파일 이름은 내용 해시다. 한글 파일명의 URL 인코딩 문제를 피하고,
+ * 내용이 바뀌면 이름도 바뀌어 캐시를 영구 보관해도 안전하다.
+ * 대응표는 tools/export-card-images.js 가 DB 에서 만들어 낸다.
+ */
+export function assetImageUrl(category: 'GENERAL' | 'TACTIC', name: string): string | undefined {
+  const file = (cardImages as Record<string, string>)[`${category}/${name}`]
+  return file ? `${import.meta.env.BASE_URL}cards/${file}` : undefined
 }

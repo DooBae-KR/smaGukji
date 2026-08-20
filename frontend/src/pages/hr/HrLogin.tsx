@@ -27,8 +27,8 @@ export function HrLogin({ onLoggedIn }: { onLoggedIn: (r: LoginResult) => void }
     setBusy(true)
     setError(null)
     try {
+      // 세션은 supabase-js 가 들고 있으므로 따로 저장하지 않는다.
       const result = await fn()
-      hr.saveToken(result.token)
       setPassword('')
       onLoggedIn(result)
     } catch (e) {

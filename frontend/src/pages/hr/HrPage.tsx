@@ -91,7 +91,6 @@ export function HrPage({
 
   const logout = async () => {
     await hr.logout().catch(() => undefined)
-    hr.clearToken()
     onSession(null)
     setSnapshot(null)
   }
@@ -100,10 +99,14 @@ export function HrPage({
    * 쓰기 작업은 «화면에 실제로 떠 있는» 스냅샷의 동맹으로 보낸다.
    * 입력칸(server/alliance)은 사용자가 언제든 바꿀 수 있어서, 그대로 쓰면
    * 그리드는 A동맹을 보여주는데 마커는 B동맹에 찍히는 사고가 난다.
+   *
+   * allianceId 는 조회 결과에서만 나오므로 그리드가 뜬 뒤에만 쓸 수 있다.
+   * (남의 동맹 id 를 넣어도 DB 정책이 막지만, 화면에서도 헷갈리지 않게 맞춰둔다)
    */
   const scope = () => ({
     server: snapshot?.server ?? server,
     alliance: snapshot?.allianceName ?? alliance,
+    allianceId: snapshot?.allianceId,
   })
 
   /** 관리자만 동맹을 바꿔가며 볼 수 있다. */
@@ -118,9 +121,14 @@ export function HrPage({
       return
     }
     const s = scope()
+    if (!s.allianceId) {
+      setError('먼저 동맹 명부를 불러와 주세요.')
+      return
+    }
     setBusyCid(row.cid)
     try {
-      await hr.toggleMarker(s.server, s.alliance, {
+      await hr.toggleMarker({
+        allianceId: s.allianceId,
         cid: row.cid,
         markerType: code,
         enabled: next,
@@ -271,10 +279,9 @@ export function HrPage({
           </div>
         )
       ) : (
-        server && alliance && (
+        scope().allianceId && (
           <CautionBoard
-            server={scope().server}
-            alliance={scope().alliance}
+            allianceId={scope().allianceId!}
             // 주의를 해제하면 그리드의 미해제 배지도 같이 갱신되어야 한다.
             onChanged={() => load(selectedDate)}
           />
@@ -288,9 +295,14 @@ export function HrPage({
           onCancel={() => setPendingCaution(null)}
           onSubmit={async (reason) => {
             const s = scope()
+            if (!s.allianceId) {
+              setError('먼저 동맹 명부를 불러와 주세요.')
+              return
+            }
             setBusyCid(pendingCaution.cid)
             try {
-              await hr.toggleMarker(s.server, s.alliance, {
+              await hr.toggleMarker({
+                allianceId: s.allianceId,
                 cid: pendingCaution.cid,
                 markerType: 'CAUTION',
                 enabled: true,
