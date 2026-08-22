@@ -72,6 +72,10 @@ app:
     general-csv-url: ${GENERAL_SHEET_CSV_URL:}
     # 장수·전법 이름 마스터 목록(구분/이름/이미지)
     roster-csv-url: ${ROSTER_SHEET_CSV_URL:}
+    # «전법» 탭. 배워서 쓰는 전법 93개의 유형·특성·발동률·설명·등급·시즌
+    tactic-csv-url: ${TACTIC_SHEET_CSV_URL:}
+    # «버프» 탭. 회심·관통·침묵 같은 용어 설명
+    buff-csv-url: ${BUFF_SHEET_CSV_URL:}
   security:
     # 인터넷에 노출한다면 8 이상으로 올리세요. 낮으면 기동 시 경고가 남습니다.
     min-password-length: ${APP_MIN_PASSWORD_LENGTH:4}

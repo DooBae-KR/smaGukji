@@ -28,26 +28,33 @@ public class SheetSyncRunner implements ApplicationRunner {
     private static final Logger log = LoggerFactory.getLogger(SheetSyncRunner.class);
 
     private final GeneralSheetSyncService syncService;
+    private final com.smagukji.backend.service.TacticSheetSyncService tacticSync;
 
-    public SheetSyncRunner(GeneralSheetSyncService syncService) {
+    public SheetSyncRunner(GeneralSheetSyncService syncService,
+            com.smagukji.backend.service.TacticSheetSyncService tacticSync) {
         this.syncService = syncService;
+        this.tacticSync = tacticSync;
     }
 
     @Override
     public void run(ApplicationArguments args) {
         try {
-            // 순서가 중요하다. 전법 이름이 먼저 있어야 장수의 고유전법 연결이 자연스럽다.
+            // 순서가 중요하다. 이름이 먼저 있어야 장수의 고유전법 연결이 자연스럽다.
             RosterResult roster = syncService.syncRoster();
+            var tactics = tacticSync.syncTactics();
             SyncResult general = syncService.sync();
+            var buffs = tacticSync.syncBuffs();
 
-            log.info("기동 시 시트 동기화 - 전법 신규 {}, 장수 갱신 {}, 명단없음 {}, 건너뜀 {}",
-                    roster.createdTactics().size(), general.updated(),
-                    general.notFound().size(), general.skipped().size());
+            log.info("기동 시 시트 동기화 - 전법 신규 {}/갱신 {}, 장수 갱신 {}, 버프 신규 {}/갱신 {}",
+                    tactics.created(), tactics.updated(), general.updated(),
+                    buffs.created(), buffs.updated());
 
             // 사람이 확인해야 할 것들은 조용히 넘기지 않는다.
             roster.suspectedTypos().forEach(t -> log.warn("시트 오타로 보임 - {}", t));
             general.notFound().forEach(n -> log.warn("시트에는 있으나 장수 명단에 없음 - {}", n));
             general.skipped().forEach(s -> log.warn("분류를 알 수 없어 건너뜀 - {}", s));
+            tactics.skipped().forEach(s -> log.warn("전법 탭 건너뜀 - {}", s));
+            buffs.skipped().forEach(s -> log.warn("버프 탭 건너뜀 - {}", s));
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             log.error("기동 시 시트 동기화가 중단되었습니다.", e);

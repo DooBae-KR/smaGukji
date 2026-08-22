@@ -81,20 +81,36 @@ public class GeneralSheetSyncService {
             "방어", AbilityType.DEFENSE, "문무", AbilityType.CIVIL_MARTIAL,
             "제어", AbilityType.CONTROL);
 
-    // 시트 열 위치. 병합 셀 때문에 «무장이름» 헤더는 3번이지만 값은 4번에 있다.
-    private static final int COL_CAMP = 1;
-    private static final int COL_DISPOSITION = 2;
-    private static final int COL_NAME = 4;
-    private static final int COL_UNIT = 5;
-    private static final int COL_CATEGORY = 6;
-    private static final int COL_ABILITY = 7;
-    private static final int COL_TACTIC = 8;
-    private static final int COL_RATE = 9;
-    private static final int COL_EFFECT = 10;
-    private static final int COL_MIGHT = 11;
-    private static final int COL_INTELLECT = 12;
-    private static final int COL_LEADERSHIP = 13;
-    private static final int COL_INITIATIVE = 14;
+    private static final Map<String, com.smagukji.backend.domain.Faction> FACTION = Map.of(
+            "위", com.smagukji.backend.domain.Faction.WEI,
+            "촉", com.smagukji.backend.domain.Faction.SHU,
+            "오", com.smagukji.backend.domain.Faction.WU,
+            "군", com.smagukji.backend.domain.Faction.QUN,
+            "한", com.smagukji.backend.domain.Faction.HAN);
+
+    /**
+     * 시트의 열 이름. 번호가 아니라 «머리글» 로 찾는다.
+     *
+     * <p>예전에는 열 번호를 그대로 박아뒀는데, 시트에 «나라» 열이 하나 끼어들자 그 뒤가
+     * 전부 한 칸씩 밀렸다. 그 상태로 동기화를 돌리면 진영 칸에 나라가, 성향 칸에 진영이
+     * 들어간다. 조용히 틀린 값이 박히는 것이라 알아채기도 어렵다.
+     * 그래서 열이 늘거나 순서가 바뀌어도 따라가도록 머리글로 찾는다.
+     */
+    private static final String H_SEASON = "시즌";
+    private static final String H_FACTION = "나라";
+    private static final String H_CAMP = "무장 진영";
+    private static final String H_DISPOSITION = "무장 성향";
+    private static final String H_NAME = "무장이름";
+    private static final String H_UNIT = "무장 병종";
+    private static final String H_CATEGORY = "전법 유명";
+    private static final String H_ABILITY = "전법 특성";
+    private static final String H_TACTIC = "고유전법이름";
+    private static final String H_RATE = "발동 확률";
+    private static final String H_EFFECT = "전법 설명";
+    private static final String H_MIGHT = "무력";
+    private static final String H_INTELLECT = "지력";
+    private static final String H_LEADERSHIP = "통솔";
+    private static final String H_INITIATIVE = "선공";
 
     // 마스터 목록 시트(구분/이름/이미지)의 열 위치
     private static final int COL_ROSTER_KIND = 0;
@@ -150,6 +166,7 @@ public class GeneralSheetSyncService {
         }
 
         List<List<String>> rows = CsvReader.parseRows(res.body());
+        SheetColumns col = SheetColumns.of(rows);
         int sheetRows = 0;
         int updated = 0;
         List<String> notFound = new ArrayList<>();
@@ -157,8 +174,8 @@ public class GeneralSheetSyncService {
 
         for (int i = 1; i < rows.size(); i++) {
             List<String> row = rows.get(i);
-            String name = cell(row, COL_NAME);
-            if (name.isEmpty()) {
+            String name = cell(row, col.require(H_NAME));
+            if (name.isEmpty() || "#N/A".equals(name)) {
                 continue;                       // 빈 템플릿 행
             }
             sheetRows++;
@@ -172,35 +189,46 @@ public class GeneralSheetSyncService {
             // ⚠️ 값을 «전부» 해석한 뒤에 반영한다.
             // 예전에는 세터를 부르면서 중간에 예외가 나서, 건너뛴 행인데도 진영만 들어가고
             // 수치는 빈 «반쯤 갱신된» 상태가 남았다.
+            com.smagukji.backend.domain.Faction faction;
             Camp camp;
             String[] dispositions;
             UnitType unit;
             TacticCategory category;
             AbilityType ability;
             try {
-                camp = lookup(CAMP, cell(row, COL_CAMP), "진영");
-                dispositions = parseDispositions(cell(row, COL_DISPOSITION));
-                unit = lookup(UNIT, cell(row, COL_UNIT), "병종");
-                category = lookup(CATEGORY, cell(row, COL_CATEGORY), "전법 유명");
-                ability = lookup(ABILITY, cell(row, COL_ABILITY), "전법 특성");
+                faction = lookup(FACTION, cell(row, col.require(H_FACTION)), "나라");
+                camp = lookup(CAMP, cell(row, col.require(H_CAMP)), "진영");
+                dispositions = parseDispositions(cell(row, col.require(H_DISPOSITION)));
+                unit = lookup(UNIT, cell(row, col.require(H_UNIT)), "병종");
+                category = lookup(CATEGORY, cell(row, col.require(H_CATEGORY)), "전법 유명");
+                ability = lookup(ABILITY, cell(row, col.require(H_ABILITY)), "전법 특성");
             } catch (IllegalArgumentException e) {
                 skipped.add("%s: %s".formatted(name, e.getMessage()));
                 continue;
             }
 
             General g = found.get();
+            g.setFaction(faction);
             g.setCamp(camp);
             g.setDispositions(dispositions);
             g.setUnitType(unit);
-            g.setMight(decimal(cell(row, COL_MIGHT)));
-            g.setIntellect(decimal(cell(row, COL_INTELLECT)));
-            g.setLeadership(decimal(cell(row, COL_LEADERSHIP)));
-            g.setInitiative(decimal(cell(row, COL_INITIATIVE)));
+            g.setMight(decimal(cell(row, col.require(H_MIGHT))));
+            g.setIntellect(decimal(cell(row, col.require(H_INTELLECT))));
+            g.setLeadership(decimal(cell(row, col.require(H_LEADERSHIP))));
+            g.setInitiative(decimal(cell(row, col.require(H_INITIATIVE))));
             g.setStatLevel(50);
 
-            String tacticName = cell(row, COL_TACTIC);
+            // 시즌은 비어 있을 수 있다(시즌 구분이 없는 기본 장수).
+            Integer season = intOrNull(cell(row, col.optional(H_SEASON)));
+            if (season != null) {
+                g.setSeason(season == 1 ? null : season);
+            }
+
+            String tacticName = cell(row, col.require(H_TACTIC));
             if (!tacticName.isEmpty()) {
-                g.setSignatureTactic(upsertSignatureTactic(row, tacticName, category, ability));
+                g.setSignatureTactic(upsertSignatureTactic(
+                        cell(row, col.require(H_RATE)), cell(row, col.require(H_EFFECT)),
+                        tacticName, category, ability));
             }
             generalRepository.save(g);
             updated++;
@@ -211,21 +239,48 @@ public class GeneralSheetSyncService {
         return new SyncResult(sheetRows, updated, notFound, skipped);
     }
 
-    private Tactic upsertSignatureTactic(List<String> row, String tacticName,
+    private Tactic upsertSignatureTactic(String rawRate, String effect, String tacticName,
             TacticCategory category, AbilityType ability) {
         Tactic tactic = tacticRepository.findByName(tacticName)
                 .orElseGet(() -> tacticRepository.save(new Tactic(tacticName)));
 
         tactic.setCategory(category);
         tactic.setAbilityType(ability);
-        tactic.setTriggerRate(decimal(cell(row, COL_RATE).replace("%", "")));
-        String effect = cell(row, COL_EFFECT);
+        tactic.setTriggerRate(percent(rawRate));
         if (!effect.isEmpty()) {
             tactic.setEffectText(effect);
         }
         tactic.setSource(TacticSource.SIGNATURE);
         return tacticRepository.save(tactic);
     }
+
+    /**
+     * 발동 확률을 퍼센트 수치로 바꾼다.
+     *
+     * <p>시트가 이 값을 두 가지로 담고 있다. 백분율 서식이면 {@code 0.75} 처럼 «비율» 이
+     * 내려오고, 사람이 직접 친 칸이면 {@code "75%"} 처럼 «글자» 가 내려온다.
+     * 1 이하면 비율로 보고 100을 곱한다. 100% 를 1.0 으로 적는 칸이 실제로 있어서다.
+     *
+     * <p>형식이 깨진 값(예: {@code "100%%"})은 고쳐 넣지 않고 비운다.
+     * 그럴듯하게 메우면 나중에 그것이 실제 값인지 알 수 없게 된다.
+     */
+    private static BigDecimal percent(String raw) {
+        String v = raw.replace("%", "").trim();
+        if (v.isEmpty() || raw.contains("%%")) {
+            return null;
+        }
+        BigDecimal n = decimal(v);
+        if (n == null) {
+            return null;
+        }
+        return n.compareTo(BigDecimal.ONE) <= 0 ? n.multiply(new BigDecimal("100")) : n;
+    }
+
+    private static Integer intOrNull(String raw) {
+        BigDecimal n = decimal(raw);
+        return n == null ? null : n.intValue();
+    }
+
 
     /** 성향은 복수다. 줄바꿈으로만 나눈다. */
     private static String[] parseDispositions(String raw) {
@@ -255,8 +310,9 @@ public class GeneralSheetSyncService {
         return v;
     }
 
+    /** 없는 열(-1)이나 짧은 행은 빈 값으로 본다. 시트 끝의 빈 칸은 아예 오지 않는다. */
     private static String cell(List<String> row, int index) {
-        return index < row.size() ? row.get(index).trim() : "";
+        return index >= 0 && index < row.size() ? row.get(index).trim() : "";
     }
 
     private static BigDecimal decimal(String value) {

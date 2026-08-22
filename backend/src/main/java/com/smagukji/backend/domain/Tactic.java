@@ -65,6 +65,19 @@ public class Tactic {
     @Column(name = "source", columnDefinition = "text")
     private TacticSource source;
 
+    /**
+     * 등급. LEGEND 전설 / HERO 영웅.
+     *
+     * <p>enum 이 아니라 문자열인 이유: 장수와 같은 값 집합이고 DB 의 체크 제약이 이미
+     * 강제한다. 두 곳에 enum 을 두면 한쪽만 늘어났을 때 조용히 어긋난다.
+     */
+    @Column(name = "rarity", columnDefinition = "text")
+    private String rarity;
+
+    /** 시즌 전법 번호. 카드에 «S» 가 붙는 전법. 비어 있으면 시즌 구분이 없는 기본 전법이다. */
+    @Column(name = "season")
+    private Integer season;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private OffsetDateTime createdAt;
 
@@ -167,6 +180,22 @@ public class Tactic {
 
     public void setRoleTags(String[] roleTags) {
         this.roleTags = roleTags == null ? new String[0] : roleTags.clone();
+    }
+
+    public String getRarity() {
+        return rarity;
+    }
+
+    public void setRarity(String rarity) {
+        this.rarity = rarity;
+    }
+
+    public Integer getSeason() {
+        return season;
+    }
+
+    public void setSeason(Integer season) {
+        this.season = season;
     }
 
     public TacticSource getSource() {
