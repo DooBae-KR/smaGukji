@@ -4,11 +4,11 @@ import { assetImageUrl } from '../api/client'
 import { EMPTY_OWNED, loadOwned } from '../api/collection'
 import type { CardKind, OwnedCards } from '../api/collection'
 import type { General, Tactic, TeamAnalysis, TeamRequest } from '../api/types'
-import { seasonTag } from "../api/labels"
+import { displayName, seasonTag } from "../api/labels"
 import type { CardItem } from "../components/CardGrid"
 import { AnalysisPanel } from '../components/AnalysisPanel'
 import { CardPickerModal } from './CardPickerModal'
-import { CollectionModal } from './CollectionModal'
+import { OwnedPanel } from "./OwnedPanel"
 
 const SLOT_COUNT = 3
 const TACTICS_PER_SLOT = 2
@@ -47,7 +47,8 @@ export function BuilderPage() {
 
   // 보유 목록. 편성은 «가진 것 중에서» 고르는 일이라 선택 팝업이 이걸 기준으로 걸러준다.
   const [owned, setOwned] = useState<OwnedCards>(EMPTY_OWNED)
-  const [showCollection, setShowCollection] = useState(false)
+  // 열려 있는 보유 등록 탭. null 이면 닫힌 상태다.
+  const [ownedTab, setOwnedTab] = useState<CardKind | null>(null)
   const [picker, setPicker] = useState<PickerTarget | null>(null)
 
   useEffect(() => {
@@ -122,6 +123,7 @@ export function BuilderPage() {
       return generals.map((g) => ({
         id: g.id,
         name: g.name,
+        label: displayName(g.name, g.season),
         sub: [seasonTag(g.season), g.factionLabel, g.unitTypeLabel].filter(Boolean).join(" · "),
         disabled: usedGenerals.has(g.name) && g.name !== slot.generalName,
         title: usedGenerals.has(g.name) && g.name !== slot.generalName
@@ -135,6 +137,7 @@ export function BuilderPage() {
       return {
         id: t.id,
         name: t.name,
+        label: displayName(t.name, t.season),
         sub: [seasonTag(t.season), t.categoryLabel ?? (t.dataComplete ? null : "상세 미입력")].filter(Boolean).join(" · ") || undefined,
         disabled: takenHere,
         title: takenHere ? '이 장수에게 이미 넣은 전법입니다' : undefined,
@@ -164,9 +167,23 @@ export function BuilderPage() {
         <div className="toolbar">
           <span className="muted">전투 {TURNS}턴 기준으로 분석합니다.</span>
           <div className="spacer" />
-          <button onClick={() => setShowCollection(true)}>
-            📦 보유 등록
-            <span className="muted"> ({owned.generals.size + owned.tactics.size})</span>
+          {/*
+            보유 등록을 모달이 아니라 «버튼 아래» 로 펼친다.
+            편성 슬롯을 보면서 등록해야 무엇이 부족한지 알 수 있는데, 모달은 화면을 덮는다.
+          */}
+          <button
+            aria-pressed={ownedTab === 'GENERAL'}
+            className={ownedTab === 'GENERAL' ? 'primary' : ''}
+            onClick={() => setOwnedTab(ownedTab === 'GENERAL' ? null : 'GENERAL')}
+          >
+            장수 <span className="muted">({owned.generals.size})</span>
+          </button>
+          <button
+            aria-pressed={ownedTab === 'TACTIC'}
+            className={ownedTab === 'TACTIC' ? 'primary' : ''}
+            onClick={() => setOwnedTab(ownedTab === 'TACTIC' ? null : 'TACTIC')}
+          >
+            전법 <span className="muted">({owned.tactics.size})</span>
           </button>
           <button
             onClick={() =>
@@ -179,10 +196,20 @@ export function BuilderPage() {
           </button>
         </div>
 
-        {owned.generals.size === 0 && (
+        {ownedTab && (
+          <OwnedPanel
+            kind={ownedTab}
+            generals={generals}
+            tactics={tactics}
+            owned={owned}
+            onChanged={setOwned}
+          />
+        )}
+
+        {!ownedTab && owned.generals.size === 0 && (
           <p className="muted">
-            보유 장수가 아직 등록되지 않았습니다. «📦 보유 등록»에서 가진 카드를 켜두면
-            장수·전법 선택이 그 안에서만 나옵니다.
+            보유 장수가 아직 등록되지 않았습니다. 위 «장수» 버튼을 눌러 가진 카드를 켜두면
+            편성에서 그 안에서만 고르게 됩니다.
           </p>
         )}
 
@@ -217,7 +244,7 @@ export function BuilderPage() {
                 >
                   {general ? (
                     <>
-                      <span className="slot-pick-name">{general.name}</span>
+                      <span className="slot-pick-name">{displayName(general.name, general.season)}</span>
                       <span className="slot-pick-sub">
                         {[general.unitTypeLabel, general.campLabel].filter(Boolean).join(' · ') ||
                           '분류 미입력'}
@@ -241,7 +268,7 @@ export function BuilderPage() {
                     >
                       {tactic ? (
                         <>
-                          <span className="slot-pick-name">{tactic.name}</span>
+                          <span className="slot-pick-name">{displayName(tactic.name, tactic.season)}</span>
                           <span className="slot-pick-sub">
                             {tactic.categoryLabel ??
                               (tactic.dataComplete ? '' : '상세 미입력')}
@@ -287,19 +314,10 @@ export function BuilderPage() {
           }
           onClose={() => setPicker(null)}
           onOpenCollection={() => {
+            // 선택 팝업을 닫고, 위쪽 보유 등록 패널을 같은 종류로 펼친다.
             setPicker(null)
-            setShowCollection(true)
+            setOwnedTab(picker.kind)
           }}
-        />
-      )}
-
-      {showCollection && (
-        <CollectionModal
-          generals={generals}
-          tactics={tactics}
-          owned={owned}
-          onChanged={setOwned}
-          onClose={() => setShowCollection(false)}
         />
       )}
     </div>

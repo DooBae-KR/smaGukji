@@ -1040,3 +1040,69 @@ button.danger:hover:not(:disabled) {
   font-size: 13px;
   color: var(--accent);
 }
+
+/* ---------------- 보유 등록 패널 (버튼 아래 펼침) ---------------- */
+
+.owned-panel {
+  margin: 8px 0 14px;
+  padding: 10px 12px;
+  background: var(--bg-panel-2);
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  /* 장수 67개·전법 160개라 길어진다. 패널 안에서만 스크롤해 편성 슬롯이 밀리지 않게 한다. */
+  max-height: min(48vh, 420px);
+  overflow-y: auto;
+}
+
+.owned-group + .owned-group {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+
+.owned-group-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.owned-group-head strong {
+  color: var(--accent);
+  font-size: 13px;
+}
+
+.owned-names {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+/* 이름만 있는 작은 버튼. 켠 것과 끈 것이 한눈에 갈려야 한다. */
+.owned-name {
+  padding: 3px 9px;
+  font-size: 12px;
+  line-height: 1.5;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text-dim);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.owned-name:hover {
+  border-color: var(--border-strong);
+  color: var(--text);
+}
+
+.owned-name.on {
+  background: var(--accent-dim);
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+/* 켠 것 앞에 표시를 둔다. 색만으로 구분하지 않기 위해서다. */
+.owned-name.on::before {
+  content: '✓ ';
+}

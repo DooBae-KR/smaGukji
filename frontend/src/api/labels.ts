@@ -94,3 +94,25 @@ export function label(map: Record<string, string>, code: string | null | undefin
 export function seasonTag(season?: number): string | undefined {
   return season == null ? undefined : `S${season}`
 }
+
+/**
+ * 화면에 보여줄 이름. 시즌 카드는 뒤에 «S2» 를 붙인다.
+ *
+ * <p>같은 이름의 기본 카드와 시즌 카드가 함께 있을 수 있어서, 목록에서 구분이 필요하다.
+ * DB 의 name 은 그대로 두고 표시할 때만 붙인다. 이름으로 조회하는 곳이 여러 군데라
+ * 실제 값에 손대면 연결이 끊어진다.
+ */
+export function displayName(name: string, season?: number): string {
+  return season == null ? name : `${name} S${season}`
+}
+
+/** 나라 표시 순서. 위·촉·오 다음에 군웅·한실. */
+export const FACTION_ORDER = ['WEI', 'SHU', 'WU', 'QUN', 'HAN']
+
+/** 등급 표시 순서와 라벨. */
+export const RARITY_ORDER = ['LEGEND', 'HERO']
+
+export const RARITY_LABEL: Record<string, string> = {
+  LEGEND: '전설',
+  HERO: '영웅',
+}

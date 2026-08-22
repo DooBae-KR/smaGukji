@@ -3,7 +3,10 @@ import type { CardKind } from '../api/collection'
 
 export interface CardItem {
   id: string
+  /** 카드 이미지를 찾는 키. 실제 DB 이름이라 손대면 안 된다 */
   name: string
+  /** 화면에 보여줄 이름. 시즌 카드는 «S2» 가 붙는다. 없으면 name 을 쓴다 */
+  label?: string
   /** 이름 밑에 작게 붙는 보조 설명. 전법 분류 같은 것 */
   sub?: string
   /** 다른 슬롯에서 이미 쓰고 있는 카드처럼 고를 수 없는 경우 */
@@ -55,7 +58,7 @@ export function CardGrid({
             ) : (
               <div className="collection-noimg">이미지 없음</div>
             )}
-            <span className="collection-name">{item.name}</span>
+            <span className="collection-name">{item.label ?? item.name}</span>
             {item.sub && <span className="collection-sub">{item.sub}</span>}
             {/* 색만으로 구분하지 않도록 표시를 함께 둔다. */}
             <span className="collection-mark" aria-hidden="true">
