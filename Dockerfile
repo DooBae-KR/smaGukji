@@ -18,6 +18,19 @@ COPY frontend/package.json frontend/package-lock.json ./
 RUN npm ci --no-audit --no-fund
 
 COPY frontend/ ./
+
+# Vite 는 VITE_* 값을 «빌드 시점에» 번들에 새겨 넣는다. 런타임 환경변수로는 바뀌지 않는다.
+# 그래서 여기서 build-arg 로 받아야 한다. 비어 있으면 화면이 «설정이 없습니다» 로 뜬다.
+#
+# anon 키는 브라우저에 나가는 값이라 번들에 들어가는 것이 정상이다.
+# 실제 차단은 DB 의 RLS 정책이 한다(V18/V21). service_role 키는 여기 넣으면 안 된다.
+ARG VITE_SUPABASE_URL=""
+ARG VITE_SUPABASE_ANON_KEY=""
+ARG VITE_API_BASE_URL=""
+ENV VITE_SUPABASE_URL=$VITE_SUPABASE_URL \
+    VITE_SUPABASE_ANON_KEY=$VITE_SUPABASE_ANON_KEY \
+    VITE_API_BASE_URL=$VITE_API_BASE_URL
+
 RUN npm run build
 
 # ---------------------------------------------------------------

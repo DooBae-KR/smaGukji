@@ -51,6 +51,8 @@ done
 # 시트 URL. 없어도 배포는 되지만 «데이터» 탭의 불러오기 버튼이 거부한다.
 GENERAL_SHEET="$(val GENERAL_SHEET_CSV_URL)"
 ROSTER_SHEET="$(val ROSTER_SHEET_CSV_URL)"
+TACTIC_SHEET="$(val TACTIC_SHEET_CSV_URL)"
+BUFF_SHEET="$(val BUFF_SHEET_CSV_URL)"
 if [ -z "$GENERAL_SHEET" ] || [ -z "$ROSTER_SHEET" ]; then
   echo "⚠️  .env 에 시트 URL 이 없습니다. 배포는 진행하지만 시트 불러오기 버튼은 동작하지 않습니다."
   echo "    GENERAL_SHEET_CSV_URL / ROSTER_SHEET_CSV_URL"
@@ -63,6 +65,10 @@ SUPABASE_URL_VAL="$(val SUPABASE_URL)"
 # 프론트가 Netlify 로 분리돼 다른 오리진이 됐다. 그 주소를 허용하지 않으면
 # 브라우저가 모든 요청을 막아 «아무것도 안 되는» 것처럼 보인다.
 CORS_VAL="$(val CORS_ALLOWED_ORIGINS)"
+
+# 프론트가 이 이미지에 함께 빌드된다. 없으면 화면이 «Supabase 설정이 없습니다» 로 뜬다.
+ANON_KEY="$(val SUPABASE_ANON_KEY)"
+[ -n "$ANON_KEY" ] || echo "⚠️  SUPABASE_ANON_KEY 가 없습니다. 화면에서 로그인할 수 없습니다."
 if [ -z "$CORS_VAL" ] || [ "$CORS_VAL" = "http://localhost:5173" ]; then
   echo "⚠️  CORS_ALLOWED_ORIGINS 가 로컬 주소뿐입니다."
   echo "    Netlify 주소를 .env 에 추가하세요. 예)"
@@ -109,7 +115,8 @@ EXISTING=$(api GET "/services?name=$NAME&limit=1" | node -e "
 #    node -e "..." VAR=x 는 환경변수가 아니라 argv 로 들어가서 process.env 가 비어버린다.
 ENVVARS=$(DB_URL="$DB_URL" DB_USER="$DB_USER" DB_PASS="$DB_PASS" \
   GENERAL_SHEET="$GENERAL_SHEET" ROSTER_SHEET="$ROSTER_SHEET" \
-  SUPABASE_URL_VAL="$SUPABASE_URL_VAL" CORS_VAL="$CORS_VAL" node -e "
+  TACTIC_SHEET="$TACTIC_SHEET" BUFF_SHEET="$BUFF_SHEET" \
+  SUPABASE_URL_VAL="$SUPABASE_URL_VAL" CORS_VAL="$CORS_VAL" ANON_KEY="$ANON_KEY" node -e "
   const e=[
     ['SPRING_PROFILES_ACTIVE','prod'],
     ['SUPABASE_DB_URL',process.env.DB_URL],
@@ -123,11 +130,19 @@ ENVVARS=$(DB_URL="$DB_URL" DB_USER="$DB_USER" DB_PASS="$DB_PASS" \
     ['ASSET_SOURCE_DIR',''],
     // 로그인 토큰(Supabase 발급)을 검증할 주소. 없으면 /api 가 전부 잠긴다.
     ['SUPABASE_URL',process.env.SUPABASE_URL_VAL||''],
+    // 프론트가 이 이미지 안에서 함께 빌드된다. Vite 는 VITE_* 를 빌드 시점에
+    // 번들에 새겨 넣으므로, 런타임이 아니라 build-arg 로 들어가야 한다(Dockerfile 참고).
+    // anon 키가 번들에 들어가는 것은 정상이다. 실제 차단은 DB 의 RLS 가 한다.
+    ['VITE_SUPABASE_URL',process.env.SUPABASE_URL_VAL||''],
+    ['VITE_SUPABASE_ANON_KEY',process.env.ANON_KEY||''],
     // Netlify 프론트는 다른 오리진이라 명시하지 않으면 브라우저가 막는다.
     ['CORS_ALLOWED_ORIGINS',process.env.CORS_VAL||''],
     // 데이터 탭의 시트 불러오기 버튼이 쓰는 값. 공개 시트라 비밀값이 아니다.
     ['GENERAL_SHEET_CSV_URL',process.env.GENERAL_SHEET||''],
     ['ROSTER_SHEET_CSV_URL',process.env.ROSTER_SHEET||''],
+    // «전법»·«버프» 탭. 전법 등급과 버프 용어 설명이 여기 있다.
+    ['TACTIC_SHEET_CSV_URL',process.env.TACTIC_SHEET||''],
+    ['BUFF_SHEET_CSV_URL',process.env.BUFF_SHEET||''],
   ];
   for(const [k,v] of e) if(v===undefined) { console.error('값 누락: '+k); process.exit(1); }
   console.log(JSON.stringify(e.map(([key,value])=>({key,value:String(value)}))));
