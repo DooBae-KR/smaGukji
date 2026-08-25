@@ -144,9 +144,45 @@ export interface TeamAnalysis {
     duplicateNames: string[]
     missingDataNames: string[]
   }
+  /**
+   * 화력·회복 지표.
+   *
+   * <p>전법 설명문의 «X%→Y%» 에서 만렙 계수 Y 를 읽어 그 전법을 든 장수의 무력(병기)이나
+   * 지력(책략)에 곱하고 대상 수·발동확률까지 반영해 더한 값이다.
+   *
+   * <p>⚠️ 게임 안의 실제 피해량이 아니다. 진형·국가 강화·병종 보너스·회심·상대 통솔 감쇄가
+   * 빠져 있다. 같은 식을 모든 덱에 적용하므로 <b>덱끼리 견주는 데만</b> 쓴다.
+   */
+  firepower: {
+    damagePerTurn: number
+    healPerTurn: number
+    /** 장수별 턴당 피해 지표 */
+    byGeneral: Record<string, number>
+    /** 계수를 읽어낸 전법 수 */
+    countedTactics: number
+    /** 계수를 못 읽은 전법 수. 버프 전용 전법이면 정상이다 */
+    unreadableTactics: number
+  }
+  /**
+   * 이 편성이 가진 장점.
+   *
+   * <p>findings 가 «고쳐야 할 것»이라면 이쪽은 «이미 잘 되어 있는 것»이다. 티어덱표에
+   * 덱마다 «왜 이 덱을 쓰는가»를 적으려면 지적 사항만으로는 쓸 수 없어서 따로 둔다.
+   */
+  strengths: {
+    /** 시트 열이나 필터에 쓰기 좋은 고정 코드 */
+    code: string
+    /** 티어표 한 칸에 들어갈 짧은 이름 */
+    title: string
+    /** 판단 근거가 된 수치를 포함한 설명 */
+    detail: string
+  }[]
   simulation: {
     turns: number
+    /** 몬테카를로 반복 횟수. 정확 계산이면 0 이다 */
     iterations: number
+    /** EXACT=분포를 그대로 계산 / MONTE_CARLO=무작위 반복 */
+    method?: 'EXACT' | 'MONTE_CARLO'
     evaluatedTactics: number
     skippedTactics: number
     expectedPerTurn: number

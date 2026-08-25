@@ -1,0 +1,2194 @@
+{
+ "source": "시즌2 티어표",
+ "sheetGid": "2052638695",
+ "decks": [
+  {
+   "title": "T0.3 쌍방패 초원마",
+   "name": "쌍방패 초원마",
+   "note": "",
+   "tier": 0.3,
+   "description": "마초는 기병, 같은 초원마 상대 시 좀 더 쌤, 조감초 나오기 전에 강력함",
+   "formation": "기형진",
+   "generals": [
+    {
+     "name": "조조",
+     "tactics": [
+      [
+       "허점 공략",
+       "고요한 제압"
+      ],
+      [
+       "전력지원",
+       "청낭치료"
+      ]
+     ],
+     "alternativeTactics": [
+      "청풍질주"
+     ],
+     "unitType": "중방패병",
+     "unitSpecialty": "굳건한 태세",
+     "books": [
+      "기림",
+      "비전",
+      "병령"
+     ],
+     "gearAttribute": "지력통솔",
+     "gear": [
+      "선방",
+      "철벽"
+     ],
+     "mount": [
+      "군림",
+      "만상",
+      "유룡"
+     ],
+     "statPlan": "지력"
+    },
+    {
+     "name": "원소",
+     "tactics": [
+      [
+       "천하평론"
+      ],
+      [
+       "결사의 다짐"
+      ]
+     ],
+     "alternativeTactics": [
+      "팔방전",
+      "강철의 의지"
+     ],
+     "unitType": "전직_중방패병",
+     "unitSpecialty": "굳건한 태세",
+     "books": [
+      "세가",
+      "적용",
+      "선용"
+     ],
+     "gearAttribute": "지력통솔",
+     "gear": [
+      "선방",
+      "철벽"
+     ],
+     "mount": [
+      "군림",
+      "만상",
+      "유룡"
+     ],
+     "statPlan": "통솔"
+    },
+    {
+     "name": "마초",
+     "tactics": [
+      [
+       "요새함락"
+      ],
+      [
+       "연전연승"
+      ]
+     ],
+     "alternativeTactics": [
+      "파죽지세",
+      "예리한 통찰",
+      "퇴로 매복"
+     ],
+     "unitType": "경기병",
+     "unitSpecialty": "기병돌진",
+     "books": [
+      "철기령",
+      "승전",
+      "구전"
+     ],
+     "gearAttribute": "무력선공",
+     "gear": [
+      "신위",
+      "연마"
+     ],
+     "mount": [
+      "천운",
+      "투영"
+     ],
+     "statPlan": "선공 25 나머지 무력"
+    }
+   ]
+  },
+  {
+   "title": "T0.5-태위",
+   "name": "-태위",
+   "note": "",
+   "tier": 0.5,
+   "description": "태원마 무조건 피해! 나머지 덱은 다 괜찮음",
+   "formation": "기형진",
+   "generals": [
+    {
+     "name": "조조",
+     "tactics": [
+      [
+       "허점공략"
+      ],
+      [
+       "고요한 제압"
+      ]
+     ],
+     "alternativeTactics": [
+      "금성의 철벽"
+     ],
+     "unitType": "중방패병",
+     "unitSpecialty": "굳건한 태세",
+     "books": [
+      "금.상권",
+      "합모",
+      "병령"
+     ],
+     "gearAttribute": "지력통솔",
+     "gear": [
+      "선방",
+      "철벽"
+     ],
+     "mount": [
+      "약수"
+     ],
+     "statPlan": "지력"
+    },
+    {
+     "name": "순욱",
+     "tactics": [
+      [
+       "음과 양"
+      ],
+      [
+       "청낭치료"
+      ]
+     ],
+     "alternativeTactics": [
+      "청풍 질주"
+     ],
+     "unitType": "전직_중방패병",
+     "unitSpecialty": "확고한 정비",
+     "books": [
+      "금.복한",
+      "정시",
+      "원도"
+     ],
+     "gearAttribute": "지력통솔",
+     "gear": [
+      "선방",
+      "철벽"
+     ],
+     "mount": [
+      "약수"
+     ],
+     "statPlan": "팀 내 지력2등 후 통솔"
+    },
+    {
+     "name": "사마의",
+     "tactics": [
+      [
+       "허실 간파"
+      ],
+      [
+       "청천벽력"
+      ]
+     ],
+     "alternativeTactics": [
+      "화공 출기불의",
+      "음과 양"
+     ],
+     "unitType": "검방패병",
+     "unitSpecialty": "백전백승",
+     "books": [
+      "여심",
+      "기동",
+      "귀모"
+     ],
+     "gearAttribute": "지력선공",
+     "gear": [
+      "신궁",
+      "영광"
+     ],
+     "mount": [
+      "천운",
+      "투영"
+     ],
+     "statPlan": "선공에 10-20 투자 팀 내 지력 1등"
+    }
+   ]
+  },
+  {
+   "title": "T0.5 백문기",
+   "name": "백문기",
+   "note": "",
+   "tier": 0.5,
+   "description": "가장 퍼포먼스 좋은 악진계열 덱 마사지딜 누적으로 죽이다보니 주태를 그리 무서워하지 않는다. 로또덱",
+   "formation": "언월진",
+   "generals": [
+    {
+     "name": "여포",
+     "tactics": [
+      [
+       "철기병 돌격"
+      ],
+      [
+       "신속전개"
+      ]
+     ],
+     "alternativeTactics": [
+      "천군 소탕"
+     ],
+     "unitType": "경기병",
+     "unitSpecialty": "용맹한 전사",
+     "books": [
+      "금.도발",
+      "질투",
+      "질전"
+     ],
+     "gearAttribute": "무력선공",
+     "gear": [
+      "신위",
+      "연마"
+     ],
+     "mount": [
+      "천운",
+      "투영"
+     ],
+     "statPlan": "선공230찍기 나머지ALL무력"
+    },
+    {
+     "name": "진궁",
+     "tactics": [
+      [
+       "결사의 다짐"
+      ],
+      [
+       "정의의 희생"
+      ]
+     ],
+     "alternativeTactics": [
+      "고요한 제압",
+      "금성의 철벽"
+     ],
+     "unitType": "장궁병",
+     "unitSpecialty": "공수 겸비",
+     "books": [
+      "금.논무",
+      "호세",
+      "적용"
+     ],
+     "gearAttribute": "지력통솔",
+     "gear": [
+      "선방",
+      "철벽"
+     ],
+     "mount": [
+      "군림"
+     ],
+     "statPlan": "통솔"
+    },
+    {
+     "name": "악진",
+     "tactics": [
+      [
+       "팔방전"
+      ],
+      [
+       "강철의 의지"
+      ]
+     ],
+     "alternativeTactics": [
+      "측면 공격",
+      "유현정책"
+     ],
+     "unitType": "중기병",
+     "unitSpecialty": "철마금과",
+     "books": [
+      "금.동등",
+      "병령",
+      "선용"
+     ],
+     "gearAttribute": "통솔선공",
+     "gear": [
+      "선방",
+      "철벽"
+     ],
+     "mount": [
+      "질주",
+      "신속"
+     ],
+     "statPlan": "선공"
+    }
+   ]
+  },
+  {
+   "title": "T0.5 쌍황육",
+   "name": "쌍황육",
+   "note": "",
+   "tier": 0.5,
+   "description": "무난한 책략덱 전장에 등장하는 덱이 잡다해지면 이득보는 덱",
+   "formation": "기형진",
+   "generals": [
+    {
+     "name": "조조",
+     "tactics": [
+      [
+       "허점 공략"
+      ],
+      [
+       "청낭 치료"
+      ]
+     ],
+     "alternativeTactics": [
+      "아무 치료병버"
+     ],
+     "unitType": "중방패병",
+     "unitSpecialty": "굳건한 태세",
+     "books": [
+      "금.상권",
+      "병령",
+      "합모"
+     ],
+     "gearAttribute": "지력통솔",
+     "gear": [
+      "선방",
+      "철벽"
+     ],
+     "mount": [
+      "군림"
+     ],
+     "statPlan": "지력"
+    },
+    {
+     "name": "육손",
+     "tactics": [
+      [
+       "도광양회"
+      ],
+      [
+       "허실 간파"
+      ]
+     ],
+     "alternativeTactics": [
+      "신의 가호",
+      "출기불의"
+     ],
+     "unitType": "전직_검방패병",
+     "unitSpecialty": "백전백승",
+     "books": [
+      "금.분영",
+      "기동",
+      "여심"
+     ],
+     "gearAttribute": "지력통솔",
+     "gear": [
+      "선방",
+      "영광"
+     ],
+     "mount": [
+      "천운",
+      "투영"
+     ],
+     "statPlan": "지력"
+    },
+    {
+     "name": "손권",
+     "tactics": [
+      [
+       "맹령한 화염"
+      ],
+      [
+       "예측의 신"
+      ]
+     ],
+     "alternativeTactics": [
+      "화공전술",
+      "속수무책"
+     ],
+     "unitType": "전직_검방패병",
+     "unitSpecialty": "철벽 방어",
+     "books": [
+      "금.동관한기",
+      "기동",
+      "여심"
+     ],
+     "gearAttribute": "지력선공",
+     "gear": [
+      "선방",
+      "철벽"
+     ],
+     "mount": [
+      "군림"
+     ],
+     "statPlan": "선공"
+    }
+   ]
+  },
+  {
+   "title": "T0.5 악순주",
+   "name": "악순주",
+   "note": "",
+   "tier": 0.5,
+   "description": "초원마에 밀려 고돌이 중요한 덱 주태덱을 전부 몰살시킨 원흉",
+   "formation": "기형진",
+   "generals": [
+    {
+     "name": "주유",
+     "tactics": [
+      [
+       "연전연승"
+      ],
+      [
+       "광풍의 분노"
+      ]
+     ],
+     "alternativeTactics": [
+      "광풍의 분노",
+      "충신의 기재"
+     ],
+     "unitType": "석궁병",
+     "unitSpecialty": "후방와해",
+     "books": [
+      "금.화계",
+      "요적",
+      "탈계"
+     ],
+     "gearAttribute": "지력선공",
+     "gear": [
+      "신궁",
+      "영광"
+     ],
+     "mount": [
+      "도화",
+      "투영"
+     ],
+     "statPlan": "지력 1등 선공투자"
+    },
+    {
+     "name": "순욱",
+     "tactics": [
+      [
+       "허점 공략"
+      ],
+      [
+       "청낭 치료"
+      ]
+     ],
+     "alternativeTactics": [
+      "청풍 질주"
+     ],
+     "unitType": "전직_중방패병",
+     "unitSpecialty": "확고한 정비",
+     "books": [
+      "금.복한",
+      "정시 병교",
+      "여심"
+     ],
+     "gearAttribute": "지력통솔",
+     "gear": [
+      "선방",
+      "철벽"
+     ],
+     "mount": [
+      "도화"
+     ],
+     "statPlan": "지력/ 팀내 지력2등"
+    },
+    {
+     "name": "악진",
+     "tactics": [
+      [
+       "팔방전"
+      ],
+      [
+       "맹렬한 화염"
+      ]
+     ],
+     "alternativeTactics": [
+      "측면 공격",
+      "화공전술"
+     ],
+     "unitType": "중기병",
+     "unitSpecialty": "철마금과",
+     "books": [
+      "합모",
+      "승전",
+      "호세"
+     ],
+     "gearAttribute": "통솔선공",
+     "gear": [
+      "선방",
+      "철벽"
+     ],
+     "mount": [
+      "도화",
+      "신속"
+     ],
+     "statPlan": "선공"
+    }
+   ]
+  },
+  {
+   "title": "T0.5 장서각 조감초",
+   "name": "장서각 조감초",
+   "note": "",
+   "tier": 0.5,
+   "description": "장서각이 있어야만 사용가능 필수덱",
+   "formation": "추형진",
+   "generals": [
+    {
+     "name": "초선",
+     "tactics": [
+      [
+       "금성의 철벽"
+      ],
+      [
+       "보급 차단"
+      ]
+     ],
+     "alternativeTactics": [
+      "예리한 통찰",
+      "광풍의 분노"
+     ],
+     "unitType": "전직_장창병",
+     "unitSpecialty": "초지일관",
+     "books": [
+      "장서각",
+      "장서각",
+      "장서각"
+     ],
+     "gearAttribute": "지력통솔",
+     "gear": [
+      "선방",
+      "철벽"
+     ],
+     "mount": [
+      "군림"
+     ],
+     "statPlan": "선공 조운보다 높게, 나머지 통솔"
+    },
+    {
+     "name": "조운",
+     "tactics": [
+      [
+       "용맹한 삼군"
+      ],
+      [
+       "병력 강화"
+      ]
+     ],
+     "alternativeTactics": [
+      "허점 공략 +지혜의 바람"
+     ],
+     "unitType": "전직_단창병",
+     "unitSpecialty": "초지일관",
+     "books": [
+      "금.신용",
+      "승민",
+      "구전"
+     ],
+     "gearAttribute": "무력통솔",
+     "gear": [
+      "신궁",
+      "연마"
+     ],
+     "mount": [
+      "천운",
+      "민첩"
+     ],
+     "statPlan": "무력"
+    },
+    {
+     "name": "감부인",
+     "tactics": [
+      [
+       "일심협력"
+      ],
+      [
+       "경무장"
+      ]
+     ],
+     "alternativeTactics": [
+      "화공"
+     ],
+     "unitType": "전직_장창병",
+     "unitSpecialty": "초지일관",
+     "books": [
+      "금.한녀",
+      "적용",
+      "기예"
+     ],
+     "gearAttribute": "지력통솔",
+     "gear": [
+      "선방",
+      "철벽"
+     ],
+     "mount": [
+      "군림"
+     ],
+     "statPlan": "선공 조운보다 높게 나머지 지력"
+    }
+   ]
+  },
+  {
+   "title": "풀빨 T0.5 태황유",
+   "name": "태황유",
+   "note": "풀빨",
+   "tier": 0.5,
+   "description": "저돌은 비추천! 고풀돌 유저가 저돌파를 상대할 때 사용하는 조합! 초원마 줄어들면 쓸만함",
+   "formation": "안형진",
+   "generals": [
+    {
+     "name": "주유",
+     "tactics": [
+      [
+       "연전연승"
+      ],
+      [
+       "충신의 기재"
+      ]
+     ],
+     "alternativeTactics": [
+      "예리한 통찰",
+      "광풍의 분노"
+     ],
+     "unitType": "석궁병",
+     "unitSpecialty": "후방 와해",
+     "books": [
+      "금.화계",
+      "요적",
+      "탈계"
+     ],
+     "gearAttribute": "지력통솔",
+     "gear": [
+      "신궁",
+      "영광"
+     ],
+     "mount": [
+      "투영"
+     ],
+     "statPlan": "지력"
+    },
+    {
+     "name": "주태",
+     "tactics": [
+      [
+       "난공불락"
+      ],
+      [
+       "세금 과징수"
+      ]
+     ],
+     "alternativeTactics": [
+      "허점 공략 +지혜의 바람"
+     ],
+     "unitType": "전직_장궁병",
+     "unitSpecialty": "치밀한 계획",
+     "books": [
+      "금.역전",
+      "호세",
+      "병령"
+     ],
+     "gearAttribute": "지력통솔",
+     "gear": [
+      "선방",
+      "철벽"
+     ],
+     "mount": [
+      "도화"
+     ],
+     "statPlan": "통솔"
+    },
+    {
+     "name": "황개",
+     "tactics": [
+      [
+       "신의 가호"
+      ],
+      [
+       "천하평론"
+      ]
+     ],
+     "alternativeTactics": [
+      "화공"
+     ],
+     "unitType": "검방패병",
+     "unitSpecialty": "백전백승",
+     "books": [
+      "귀모",
+      "기동",
+      "여심"
+     ],
+     "gearAttribute": "통솔선공",
+     "gear": [
+      "선방",
+      "결기"
+     ],
+     "mount": [
+      "질주",
+      "신속"
+     ],
+     "statPlan": "선공"
+    }
+   ]
+  },
+  {
+   "title": "풀빨T0.8 답설기",
+   "name": "답설기",
+   "note": "풀빨",
+   "tier": 0.8,
+   "description": "주태에게 카운터를 너무 심하게 당하는 덱",
+   "formation": "구행진",
+   "generals": [
+    {
+     "name": "마운록",
+     "tactics": [
+      [
+       "예리한 통찰"
+      ],
+      [
+       "철기병 돌격"
+      ]
+     ],
+     "alternativeTactics": [],
+     "unitType": "경기병",
+     "unitSpecialty": "기병돌진",
+     "books": [
+      "질투",
+      "질전",
+      "금.풍속"
+     ],
+     "gearAttribute": "무력선공",
+     "gear": [
+      "신위",
+      "연마"
+     ],
+     "mount": [
+      "천운",
+      "투영"
+     ],
+     "statPlan": "선공 230 나머지 무력"
+    },
+    {
+     "name": "악진",
+     "tactics": [
+      [
+       "신속전개"
+      ],
+      [
+       "강철의 의지"
+      ]
+     ],
+     "alternativeTactics": [],
+     "unitType": "장창병",
+     "unitSpecialty": "초지일관",
+     "books": [
+      "금.동등",
+      "병령",
+      "선용"
+     ],
+     "gearAttribute": "통솔선공",
+     "gear": [
+      "선방",
+      "철벽"
+     ],
+     "mount": [
+      "질주",
+      "신속"
+     ],
+     "statPlan": "성공"
+    },
+    {
+     "name": "견희",
+     "tactics": [
+      [
+       "허점 공략"
+      ],
+      [
+       "정의의 희생"
+      ]
+     ],
+     "alternativeTactics": [],
+     "unitType": "장궁병",
+     "unitSpecialty": "공수 겸비",
+     "books": [
+      "금.하권",
+      "병령",
+      "적용"
+     ],
+     "gearAttribute": "지력통솔",
+     "gear": [
+      "선방",
+      "철벽"
+     ],
+     "mount": [
+      "군림"
+     ],
+     "statPlan": "지력"
+    }
+   ]
+  },
+  {
+   "title": "T0.8 대금마",
+   "name": "대금마",
+   "note": "",
+   "tier": 0.8,
+   "description": "주태에게 카운터를 너무 심하게 당하는 덱 그나마 사마의 덱 상대로 강함",
+   "formation": "언월진",
+   "generals": [
+    {
+     "name": "마초",
+     "tactics": [
+      [
+       "요새함락"
+      ],
+      [
+       "철기병 돌격"
+      ]
+     ],
+     "alternativeTactics": [
+      "파죽지세",
+      "퇴로매복"
+     ],
+     "unitType": "경기병",
+     "unitSpecialty": "기병돌진",
+     "books": [
+      "금.철기령",
+      "승전",
+      "시리"
+     ],
+     "gearAttribute": "무력선공",
+     "gear": [
+      "신위 연마"
+     ],
+     "mount": [
+      "천운 투영"
+     ],
+     "statPlan": "선공 230 후 ALL 무력"
+    },
+    {
+     "name": "대교",
+     "tactics": [
+      [
+       "결사의 다짐"
+      ],
+      [
+       "정의의 희생"
+      ]
+     ],
+     "alternativeTactics": [
+      "허점 공략"
+     ],
+     "unitType": "장창병",
+     "unitSpecialty": "초지일관",
+     "books": [
+      "금.상사문부",
+      "비전",
+      "적용"
+     ],
+     "gearAttribute": "지력통솔",
+     "gear": [
+      "선방 영광"
+     ],
+     "mount": [
+      "천운 투영"
+     ],
+     "statPlan": "지력"
+    },
+    {
+     "name": "악진",
+     "tactics": [
+      [
+       "강철의 의지"
+      ],
+      [
+       "천하평론"
+      ]
+     ],
+     "alternativeTactics": [],
+     "unitType": "중기병",
+     "unitSpecialty": "철마금과",
+     "books": [
+      "금.동등",
+      "병령",
+      "선용"
+     ],
+     "gearAttribute": "통솔선공",
+     "gear": [
+      "선방 철벽"
+     ],
+     "mount": [
+      "질주 신속"
+     ],
+     "statPlan": "선공"
+    }
+   ]
+  },
+  {
+   "title": "풀빨 T0.8 대금연",
+   "name": "대금연",
+   "note": "풀빨",
+   "tier": 0.8,
+   "description": "주태에게 카운터를 너무 심하게 당하는 덱",
+   "formation": "언월진",
+   "generals": [
+    {
+     "name": "하후연",
+     "tactics": [
+      [
+       "철기병 돌격"
+      ],
+      [
+       "신속전개"
+      ]
+     ],
+     "alternativeTactics": [
+      "천리기습",
+      "천군소탕"
+     ],
+     "unitType": "전직_석궁병",
+     "unitSpecialty": "완벽한 사격",
+     "books": [
+      "금.신속",
+      "승전",
+      "구전"
+     ],
+     "gearAttribute": "무력선공",
+     "gear": [
+      "신위",
+      "연마"
+     ],
+     "mount": [
+      "천운",
+      "투영"
+     ],
+     "statPlan": "팀 내 선공 2등 후 무력"
+    },
+    {
+     "name": "대교",
+     "tactics": [
+      [
+       "결사의 다짐"
+      ],
+      [
+       "정의의 희생"
+      ]
+     ],
+     "alternativeTactics": [
+      "허점 공략",
+      "고요한 제압"
+     ],
+     "unitType": "장창병",
+     "unitSpecialty": "초지일관",
+     "books": [
+      "금.국색",
+      "적용",
+      "비전"
+     ],
+     "gearAttribute": "지력통솔",
+     "gear": [
+      "선방",
+      "철벽"
+     ],
+     "mount": [
+      "군림.유룡"
+     ],
+     "statPlan": "지력"
+    },
+    {
+     "name": "악진",
+     "tactics": [
+      [
+       "팔방전"
+      ],
+      [
+       "강철의 의지"
+      ]
+     ],
+     "alternativeTactics": [
+      "측면 공격",
+      "유현정책"
+     ],
+     "unitType": "중기병",
+     "unitSpecialty": "철마금과",
+     "books": [
+      "금.동등",
+      "병령",
+      "선용"
+     ],
+     "gearAttribute": "통솔선공",
+     "gear": [
+      "선방",
+      "철벽"
+     ],
+     "mount": [
+      "질주",
+      "신속"
+     ],
+     "statPlan": "선공 선공 1등"
+    }
+   ]
+  },
+  {
+   "title": "T0.8 손노관",
+   "name": "손노관",
+   "note": "",
+   "tier": 0.8,
+   "description": "육손, 사마의 카운터 선공 높은덱 교전 X",
+   "formation": "기형진",
+   "generals": [
+    {
+     "name": "노숙",
+     "tactics": [
+      [
+       "허점 공략"
+      ],
+      [
+       "예측의 신"
+      ]
+     ],
+     "alternativeTactics": [
+      "세금 과징수",
+      "견고한 방어",
+      "속수무책"
+     ],
+     "unitType": "전직_중기병",
+     "unitSpecialty": "용맹한 용사",
+     "books": [
+      "금.치국론론",
+      "기동",
+      "여심"
+     ],
+     "gearAttribute": "지력선공",
+     "gear": [
+      "선방 철벽"
+     ],
+     "mount": [
+      "군림"
+     ],
+     "statPlan": "선공"
+    },
+    {
+     "name": "관우",
+     "tactics": [
+      [
+       "기민한 전술"
+      ],
+      [
+       "칠군수몰"
+      ]
+     ],
+     "alternativeTactics": [],
+     "unitType": "경기병",
+     "unitSpecialty": "초지일관",
+     "books": [
+      "금.왕예",
+      "승민",
+      "구전"
+     ],
+     "gearAttribute": "무력통솔",
+     "gear": [
+      "신궁",
+      "연마"
+     ],
+     "mount": [
+      "천운",
+      "민첩"
+     ],
+     "statPlan": "무력"
+    },
+    {
+     "name": "손권",
+     "tactics": [
+      [
+       "청풍 질주"
+      ],
+      [
+       "팔방전"
+      ]
+     ],
+     "alternativeTactics": [
+      "측면 공격"
+     ],
+     "unitType": "장궁병",
+     "unitSpecialty": "공수 겸비",
+     "books": [
+      "금.동관한기",
+      "기동",
+      "여심"
+     ],
+     "gearAttribute": "지력통솔",
+     "gear": [
+      "선방",
+      "철벽"
+     ],
+     "mount": [
+      "군림"
+     ],
+     "statPlan": "지력"
+    }
+   ]
+  },
+  {
+   "title": "T0.8 조태육",
+   "name": "조태육",
+   "note": "",
+   "tier": 0.8,
+   "description": "시즌 후반에나 쓸만함. (비추)",
+   "formation": "언월진",
+   "generals": [
+    {
+     "name": "육손",
+     "tactics": [
+      [
+       "도광양회"
+      ],
+      [
+       "허실 간파"
+      ]
+     ],
+     "alternativeTactics": [
+      "신의 가호",
+      "출기불의"
+     ],
+     "unitType": "전직_검방패병",
+     "unitSpecialty": "백전백승",
+     "books": [
+      "금.분영",
+      "기동",
+      "여심"
+     ],
+     "gearAttribute": "지력통솔",
+     "gear": [
+      "신궁 영광"
+     ],
+     "mount": [
+      "천운 투영"
+     ],
+     "statPlan": "지력"
+    },
+    {
+     "name": "주태",
+     "tactics": [
+      [
+       "난공불락"
+      ],
+      [
+       "세금 과징수"
+      ]
+     ],
+     "alternativeTactics": [
+      "허점 공략+",
+      "지혜의 바람"
+     ],
+     "unitType": "전직_장궁병",
+     "unitSpecialty": "치밀한 계획",
+     "books": [
+      "금.역전",
+      "호세",
+      "병령"
+     ],
+     "gearAttribute": "지력통솔",
+     "gear": [
+      "선방 철벽"
+     ],
+     "mount": [
+      "군림"
+     ],
+     "statPlan": "통솔"
+    },
+    {
+     "name": "조조",
+     "tactics": [
+      [
+       "청풍 질주",
+       "청낭 치료"
+      ],
+      [
+       "화공전술"
+      ]
+     ],
+     "alternativeTactics": [
+      "임의 [화공]관련병법",
+      "임의 치료병법"
+     ],
+     "unitType": "중방패병",
+     "unitSpecialty": "굳건한 태세",
+     "books": [
+      "금.상권",
+      "병령",
+      "합모"
+     ],
+     "gearAttribute": "지력통솔",
+     "gear": [
+      "선방 철벽"
+     ],
+     "mount": [
+      "군림"
+     ],
+     "statPlan": "선공 1등 나머지 지력"
+    }
+   ]
+  },
+  {
+   "title": "T0.8 중화기",
+   "name": "중화기",
+   "note": "",
+   "tier": 0.8,
+   "description": "전형적인 공존덱 풀도감 아닌 유저들이 주력으로 자주 사용하는 덱",
+   "formation": "안형진",
+   "generals": [
+    {
+     "name": "노숙",
+     "tactics": [
+      [
+       "허점 공략"
+      ],
+      [
+       "예측의 신"
+      ]
+     ],
+     "alternativeTactics": [
+      "세금 과징수",
+      "견고한 방어",
+      "속수무책"
+     ],
+     "unitType": "전직_중기병",
+     "unitSpecialty": "용맹한 용사",
+     "books": [
+      "금.치국론론",
+      "기동",
+      "여심"
+     ],
+     "gearAttribute": "지력선공",
+     "gear": [
+      "선방 철벽"
+     ],
+     "mount": [
+      "군림"
+     ],
+     "statPlan": "선공"
+    },
+    {
+     "name": "육손",
+     "tactics": [
+      [
+       "도광양회"
+      ],
+      [
+       "허실 간파"
+      ]
+     ],
+     "alternativeTactics": [
+      "신의 가호",
+      "출기불의"
+     ],
+     "unitType": "전직_검방패병",
+     "unitSpecialty": "백전백승",
+     "books": [
+      "금.분영",
+      "기동",
+      "여심"
+     ],
+     "gearAttribute": "지력통솔",
+     "gear": [
+      "선방",
+      "영광"
+     ],
+     "mount": [
+      "천운",
+      "투영"
+     ],
+     "statPlan": "지력"
+    },
+    {
+     "name": "손권",
+     "tactics": [
+      [
+       "치료전법"
+      ],
+      [
+       "맹렬한 화염"
+      ]
+     ],
+     "alternativeTactics": [
+      "화공전술",
+      "속수무책"
+     ],
+     "unitType": "장궁병",
+     "unitSpecialty": "공수 겸비",
+     "books": [
+      "금.동관한기",
+      "기동",
+      "여심"
+     ],
+     "gearAttribute": "지력통솔",
+     "gear": [
+      "선방",
+      "철벽"
+     ],
+     "mount": [
+      "군림"
+     ],
+     "statPlan": "지력"
+    }
+   ]
+  },
+  {
+   "title": "T0.8 태원마",
+   "name": "태원마",
+   "note": "",
+   "tier": 0.8,
+   "description": "초원마에 밀린 덱",
+   "formation": "기형진",
+   "generals": [
+    {
+     "name": "원소",
+     "tactics": [
+      [
+       "허점 공략"
+      ],
+      [
+       "천하평론"
+      ]
+     ],
+     "alternativeTactics": [],
+     "unitType": "장궁병",
+     "unitSpecialty": "공수겸비",
+     "books": [
+      "금.세가",
+      "적용",
+      "선용"
+     ],
+     "gearAttribute": "지력통솔",
+     "gear": [
+      "선방",
+      "철벽"
+     ],
+     "mount": [
+      "군림"
+     ],
+     "statPlan": "마초보다 선공1 낮게 ALL통솔"
+    },
+    {
+     "name": "주태",
+     "tactics": [
+      [
+       "난공불략"
+      ],
+      [
+       "세금 과징수"
+      ]
+     ],
+     "alternativeTactics": [
+      "고요한 제압+지혜의 바람"
+     ],
+     "unitType": "전직_장궁병",
+     "unitSpecialty": "치밀한 계획",
+     "books": [
+      "금.역전",
+      "비전",
+      "기임"
+     ],
+     "gearAttribute": "지력통솔",
+     "gear": [
+      "선방",
+      "철벽"
+     ],
+     "mount": [
+      "군림"
+     ],
+     "statPlan": "통솔"
+    },
+    {
+     "name": "마초",
+     "tactics": [
+      [
+       "연전연승"
+      ],
+      [
+       "요새함락"
+      ]
+     ],
+     "alternativeTactics": [
+      "예리한 통찰",
+      "파죽지세"
+     ],
+     "unitType": "전직_석궁병",
+     "unitSpecialty": "날카로운 화살",
+     "books": [
+      "금.철기령",
+      "시리",
+      "구전"
+     ],
+     "gearAttribute": "무력선공",
+     "gear": [
+      "신궁",
+      "연마"
+     ],
+     "mount": [
+      "천운",
+      "투영"
+     ],
+     "statPlan": "선공 최소 20 투자 나머지 무력"
+    }
+   ]
+  },
+  {
+   "title": "T0.8 틁태위",
+   "name": "틁태위",
+   "note": "",
+   "tier": 0.8,
+   "description": "여포, 조운에게 강하고 기타 위나라덱이나 육손한테 약함",
+   "formation": "기형진",
+   "generals": [
+    {
+     "name": "하후돈",
+     "tactics": [
+      [
+       "세금 과징수"
+      ],
+      [
+       "전력지원"
+      ]
+     ],
+     "alternativeTactics": [
+      "견고한 방어"
+     ],
+     "unitType": "중기병",
+     "unitSpecialty": "철마금과",
+     "books": [
+      "금.위협",
+      "분치",
+      "수토"
+     ],
+     "gearAttribute": "지력통솔",
+     "gear": [
+      "선방",
+      "철벽"
+     ],
+     "mount": [
+      "약수"
+     ],
+     "statPlan": "통솔"
+    },
+    {
+     "name": "조조",
+     "tactics": [
+      [
+       "준비 완료"
+      ],
+      [
+       "청낭 치료"
+      ]
+     ],
+     "alternativeTactics": [
+      "백전불태"
+     ],
+     "unitType": "중방패병",
+     "unitSpecialty": "굳건한 태세",
+     "books": [
+      "금.상권",
+      "합모",
+      "병령"
+     ],
+     "gearAttribute": "지력통솔",
+     "gear": [
+      "선방",
+      "철벽"
+     ],
+     "mount": [
+      "약수"
+     ],
+     "statPlan": "지력"
+    },
+    {
+     "name": "사마의",
+     "tactics": [
+      [
+       "허실 간파"
+      ],
+      [
+       "청천벽력"
+      ]
+     ],
+     "alternativeTactics": [
+      "화공 출기불의",
+      "음과 양"
+     ],
+     "unitType": "전직_단창병",
+     "unitSpecialty": "완전 무장",
+     "books": [
+      "기동",
+      "여심",
+      "귀모"
+     ],
+     "gearAttribute": "지력선공",
+     "gear": [
+      "선방",
+      "영광"
+     ],
+     "mount": [
+      "천운",
+      "투영"
+     ],
+     "statPlan": "선공에 10-20 투자 팀 내 지력 1등"
+    }
+   ]
+  },
+  {
+   "title": "T1 가태위",
+   "name": "가태위",
+   "note": "",
+   "tier": 1,
+   "description": "명함덱 중 최강이었던 덱 시즌 환경 및 돌파 영향을 많이 받아 밸류 떨어짐",
+   "formation": "기형진",
+   "generals": [
+    {
+     "name": "가후",
+     "tactics": [
+      [
+       "세금 과징수"
+      ],
+      [
+       "전력지원"
+      ]
+     ],
+     "alternativeTactics": [],
+     "unitType": "전직_석궁병",
+     "unitSpecialty": "전우 동심",
+     "books": [
+      "금.궤도",
+      "수토",
+      "피험"
+     ],
+     "gearAttribute": "지력통솔",
+     "gear": [
+      "선방 철벽"
+     ],
+     "mount": [
+      "약수"
+     ],
+     "statPlan": "통솔"
+    },
+    {
+     "name": "조조",
+     "tactics": [
+      [
+       "준비 완료"
+      ],
+      [
+       "허점 공략"
+      ]
+     ],
+     "alternativeTactics": [],
+     "unitType": "장창병",
+     "unitSpecialty": "굳건한 태세",
+     "books": [
+      "금.상권",
+      "합모",
+      "병령"
+     ],
+     "gearAttribute": "지력통솔",
+     "gear": [
+      "선방 철벽"
+     ],
+     "mount": [
+      "약수"
+     ],
+     "statPlan": "지력"
+    },
+    {
+     "name": "사마의",
+     "tactics": [
+      [
+       "허실 간파"
+      ],
+      [
+       "청천벽력"
+      ]
+     ],
+     "alternativeTactics": [],
+     "unitType": "중기병",
+     "unitSpecialty": "완전 무장",
+     "books": [
+      "금.대략",
+      "기지",
+      "귀모"
+     ],
+     "gearAttribute": "지력선공",
+     "gear": [
+      "선방 영광"
+     ],
+     "mount": [
+      "천운 투영"
+     ],
+     "statPlan": "10~20 선공 후 지력"
+    }
+   ]
+  },
+  {
+   "title": "T1 조감관",
+   "name": "조감관",
+   "note": "",
+   "tier": 1,
+   "description": "",
+   "formation": "기형진",
+   "generals": [
+    {
+     "name": "관우",
+     "tactics": [
+      [
+       "기민한 전술"
+      ],
+      [
+       "칠군수몰"
+      ]
+     ],
+     "alternativeTactics": [],
+     "unitType": "경기병",
+     "unitSpecialty": "초지일관",
+     "books": [
+      "금.왕예",
+      "승민",
+      "구전"
+     ],
+     "gearAttribute": "무력통솔",
+     "gear": [
+      "신궁",
+      "연마"
+     ],
+     "mount": [
+      "천운",
+      "민첩"
+     ],
+     "statPlan": "무력"
+    },
+    {
+     "name": "조운",
+     "tactics": [
+      [
+       "병력 강화"
+      ],
+      [
+       "용맹한 삼군"
+      ]
+     ],
+     "alternativeTactics": [
+      "예리한 통찰",
+      "팔방전 요새함락",
+      "파죽지세"
+     ],
+     "unitType": "경기병",
+     "unitSpecialty": "여유만만",
+     "books": [
+      "금.신용",
+      "승민",
+      "구전"
+     ],
+     "gearAttribute": "무력통솔",
+     "gear": [
+      "신위 연마"
+     ],
+     "mount": [
+      "천운",
+      "민첩"
+     ],
+     "statPlan": "무력"
+    },
+    {
+     "name": "감부인",
+     "tactics": [
+      [
+       "금성의 철벽"
+      ],
+      [
+       "보급 차단"
+      ]
+     ],
+     "alternativeTactics": [
+      "전쟁 종식",
+      "철풍 질주 백전불태",
+      "일심협력"
+     ],
+     "unitType": "장궁병",
+     "unitSpecialty": "전우 동심",
+     "books": [
+      "금.한녀",
+      "금고",
+      "선용"
+     ],
+     "gearAttribute": "지력통솔",
+     "gear": [
+      "선방",
+      "철벽"
+     ],
+     "mount": [
+      "군림"
+     ],
+     "statPlan": "지력"
+    }
+   ]
+  },
+  {
+   "title": "T1 황황제",
+   "name": "황황제",
+   "note": "",
+   "tier": 1,
+   "description": "",
+   "formation": "추형진",
+   "generals": [
+    {
+     "name": "황월영",
+     "tactics": [
+      [
+       "적재적소"
+      ],
+      [
+       "보급 차단"
+      ]
+     ],
+     "alternativeTactics": [],
+     "unitType": "장궁병",
+     "unitSpecialty": "공수 겸비",
+     "books": [
+      "장서각",
+      "장서각",
+      "장서각"
+     ],
+     "gearAttribute": "무력선공",
+     "gear": [
+      "신위",
+      "연마"
+     ],
+     "mount": [
+      "천운",
+      "투영"
+     ],
+     "statPlan": "선공 230 나머지 무력"
+    },
+    {
+     "name": "제갈량",
+     "tactics": [
+      [
+       "연전연승"
+      ],
+      [
+       "충신의 기재"
+      ]
+     ],
+     "alternativeTactics": [],
+     "unitType": "석궁병",
+     "unitSpecialty": "후방 와해",
+     "books": [
+      "금.동등",
+      "병령",
+      "선용"
+     ],
+     "gearAttribute": "통솔선공",
+     "gear": [
+      "선방",
+      "철벽"
+     ],
+     "mount": [
+      "질주",
+      "신속"
+     ],
+     "statPlan": "성공"
+    },
+    {
+     "name": "황개",
+     "tactics": [
+      [
+       "신의 가호"
+      ],
+      [
+       "천하평론"
+      ]
+     ],
+     "alternativeTactics": [],
+     "unitType": "검방패병",
+     "unitSpecialty": "백전백승",
+     "books": [
+      "금.하권",
+      "병령",
+      "적용"
+     ],
+     "gearAttribute": "지력통솔",
+     "gear": [
+      "선방",
+      "철벽"
+     ],
+     "mount": [
+      "군림"
+     ],
+     "statPlan": "지력"
+    }
+   ]
+  },
+  {
+   "title": "T1.2 서성재해",
+   "name": "서성재해",
+   "note": "",
+   "tier": 1.2,
+   "description": "",
+   "formation": "기형진",
+   "generals": [
+    {
+     "name": "서성",
+     "tactics": [
+      [
+       "광풍의 분노"
+      ]
+     ],
+     "alternativeTactics": [],
+     "unitType": "중방패병",
+     "unitSpecialty": "굳건한 태세",
+     "books": [
+      "금.의성",
+      "병령",
+      "대파"
+     ],
+     "gearAttribute": "지력통솔",
+     "gear": [
+      "선방 철벽"
+     ],
+     "mount": [
+      "군림"
+     ],
+     "statPlan": "통솔"
+    },
+    {
+     "name": "주유",
+     "tactics": [
+      [
+       "연전연승"
+      ],
+      [
+       "음과 양"
+      ]
+     ],
+     "alternativeTactics": [],
+     "unitType": "석궁병",
+     "unitSpecialty": "후방 와해",
+     "books": [
+      "요적",
+      "시리",
+      "탈계"
+     ],
+     "gearAttribute": "지력통솔",
+     "gear": [
+      "선방 영광"
+     ],
+     "mount": [
+      "천운",
+      "투영"
+     ],
+     "statPlan": "지력"
+    },
+    {
+     "name": "가후",
+     "tactics": [
+      [
+       "화공전술"
+      ],
+      [
+       "재해 이용"
+      ]
+     ],
+     "alternativeTactics": [],
+     "unitType": "석궁병",
+     "unitSpecialty": "후방 와해",
+     "books": [
+      "금.궤도",
+      "탈계",
+      "요적"
+     ],
+     "gearAttribute": "지력통솔",
+     "gear": [
+      "선방 영광"
+     ],
+     "mount": [
+      "천운 투영"
+     ],
+     "statPlan": "지력"
+    }
+   ]
+  },
+  {
+   "title": "T1.2 조감태",
+   "name": "조감태",
+   "note": "",
+   "tier": 1.2,
+   "description": "",
+   "formation": "추형진",
+   "generals": [
+    {
+     "name": "주태",
+     "tactics": [
+      [
+       "금성의 철벽"
+      ],
+      [
+       "일심협력",
+       "지혜의 바람"
+      ]
+     ],
+     "alternativeTactics": [],
+     "unitType": "중기병",
+     "unitSpecialty": "적진 돌격",
+     "books": [
+      "금.부족",
+      "병정",
+      "병령"
+     ],
+     "gearAttribute": "지력통솔",
+     "gear": [
+      "선방 철벽"
+     ],
+     "mount": [
+      "군림"
+     ],
+     "statPlan": "통솔"
+    },
+    {
+     "name": "조운",
+     "tactics": [
+      [
+       "예리한 통찰"
+      ],
+      [
+       "요새함락"
+      ]
+     ],
+     "alternativeTactics": [],
+     "unitType": "경기병",
+     "unitSpecialty": "여유만만",
+     "books": [
+      "금.신용",
+      "승민",
+      "구전"
+     ],
+     "gearAttribute": "무력통솔",
+     "gear": [
+      "신위 연마"
+     ],
+     "mount": [
+      "천운 민첩"
+     ],
+     "statPlan": "무력"
+    },
+    {
+     "name": "감부인",
+     "tactics": [
+      [
+       "천하평론"
+      ],
+      [
+       "백전불태"
+      ]
+     ],
+     "alternativeTactics": [],
+     "unitType": "전직_중기병",
+     "unitSpecialty": "여유만만",
+     "books": [
+      "금.한녀",
+      "금고",
+      "선용"
+     ],
+     "gearAttribute": "지력통솔",
+     "gear": [
+      "선방 철벽"
+     ],
+     "mount": [
+      "군림"
+     ],
+     "statPlan": "지력"
+    }
+   ]
+  },
+  {
+   "title": "T1.2 주태육손+X",
+   "name": "주태육손+X",
+   "note": "",
+   "tier": 1.2,
+   "description": "주태육손_ 아무 서포터로 조합가능",
+   "formation": "일자진",
+   "generals": [
+    {
+     "name": "노숙",
+     "tactics": [
+      [
+       "화공전술"
+      ],
+      [
+       "예측의 신"
+      ]
+     ],
+     "alternativeTactics": [],
+     "unitType": "전직_중기병",
+     "unitSpecialty": "용맹한 용사",
+     "books": [
+      "금.치국론",
+      "기동",
+      "여심"
+     ],
+     "gearAttribute": "지력선공",
+     "gear": [
+      "선방",
+      "철벽"
+     ],
+     "mount": [
+      "군림"
+     ],
+     "statPlan": "선공"
+    },
+    {
+     "name": "육손",
+     "tactics": [
+      [
+       "도광양회"
+      ],
+      [
+       "허실 간파"
+      ]
+     ],
+     "alternativeTactics": [],
+     "unitType": "석궁병",
+     "unitSpecialty": "후방 와해",
+     "books": [
+      "금.분량",
+      "기동",
+      "여심"
+     ],
+     "gearAttribute": "지력통솔",
+     "gear": [
+      "선방",
+      "철벽"
+     ],
+     "mount": [
+      "천운",
+      "투영"
+     ],
+     "statPlan": "지력"
+    },
+    {
+     "name": "주태",
+     "tactics": [
+      [
+       "난공불락"
+      ],
+      [
+       "세금 과징수"
+      ]
+     ],
+     "alternativeTactics": [],
+     "unitType": "장궁병",
+     "unitSpecialty": "치밀한 계획",
+     "books": [
+      "금.부족",
+      "병정",
+      "병령"
+     ],
+     "gearAttribute": "지력통솔",
+     "gear": [
+      "선방",
+      "철벽"
+     ],
+     "mount": [
+      "군림"
+     ],
+     "statPlan": "통솔"
+    }
+   ]
+  },
+  {
+   "title": "5군 늙태위",
+   "name": "5군 늙태위",
+   "note": "",
+   "tier": null,
+   "description": "",
+   "formation": "기형진",
+   "generals": [
+    {
+     "name": "하후돈",
+     "tactics": [
+      [
+       "견고한 방어"
+      ],
+      [
+       "전력 지원"
+      ]
+     ],
+     "alternativeTactics": [],
+     "unitType": "중기병",
+     "unitSpecialty": "철마금과",
+     "books": [
+      "금.위협",
+      "분치",
+      "수토"
+     ],
+     "gearAttribute": "지력통솔",
+     "gear": [
+      "선방 철벽"
+     ],
+     "mount": [
+      "약수"
+     ],
+     "statPlan": "통솔"
+    },
+    {
+     "name": "등애",
+     "tactics": [
+      [
+       "준비 완료"
+      ],
+      [
+       "청풍 질주"
+      ]
+     ],
+     "alternativeTactics": [],
+     "unitType": "장창병",
+     "unitSpecialty": "초지일관",
+     "books": [
+      "금,상권",
+      "합모",
+      "병령"
+     ],
+     "gearAttribute": "지력통솔",
+     "gear": [
+      "선방 철벽"
+     ],
+     "mount": [
+      "약수"
+     ],
+     "statPlan": "지력"
+    },
+    {
+     "name": "사마의",
+     "tactics": [
+      [
+       "허실 간파"
+      ],
+      [
+       "청천벽력"
+      ]
+     ],
+     "alternativeTactics": [],
+     "unitType": "검방패병",
+     "unitSpecialty": "백전백승",
+     "books": [
+      "기동",
+      "여심",
+      "귀모"
+     ],
+     "gearAttribute": "지력선공",
+     "gear": [
+      "지력 선공"
+     ],
+     "mount": [
+      "천운 투영"
+     ],
+     "statPlan": "선공 10~20 후 지력"
+    }
+   ]
+  }
+ ]
+}

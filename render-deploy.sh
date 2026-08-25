@@ -69,11 +69,17 @@ CORS_VAL="$(val CORS_ALLOWED_ORIGINS)"
 # 프론트가 이 이미지에 함께 빌드된다. 없으면 화면이 «Supabase 설정이 없습니다» 로 뜬다.
 ANON_KEY="$(val SUPABASE_ANON_KEY)"
 [ -n "$ANON_KEY" ] || echo "⚠️  SUPABASE_ANON_KEY 가 없습니다. 화면에서 로그인할 수 없습니다."
-if [ -z "$CORS_VAL" ] || [ "$CORS_VAL" = "http://localhost:5173" ]; then
-  echo "⚠️  CORS_ALLOWED_ORIGINS 가 로컬 주소뿐입니다."
-  echo "    Netlify 주소를 .env 에 추가하세요. 예)"
-  echo "    CORS_ALLOWED_ORIGINS=http://localhost:5173,https://smagukji.netlify.app"
-fi
+# 경고만 하고 넘어갔더니 2026-08-22 배포가 로컬 주소만 올려서, Netlify 에서 인사 시트 업로드가
+# «Failed to fetch» 로 막혔다(브라우저가 CORS 로 차단). 이제는 막는다.
+case "$CORS_VAL" in
+  *netlify.app*) ;;
+  *)
+    echo "❌ CORS_ALLOWED_ORIGINS 에 Netlify 주소가 없습니다. 이대로 올리면 화면에서 업로드가 «Failed to fetch» 로 실패합니다." >&2
+    echo "    .env 에 이렇게 넣으세요 (www 없이):" >&2
+    echo "    CORS_ALLOWED_ORIGINS=http://localhost:5173,https://samgukji.netlify.app" >&2
+    exit 1
+    ;;
+esac
 
 api() { # api METHOD PATH [BODY]
   local m="$1" p="$2" b="${3:-}"

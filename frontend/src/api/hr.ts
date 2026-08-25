@@ -728,12 +728,24 @@ export async function importSheet(
   const params = new URLSearchParams({ server, alliance })
   if (snapshotDate) params.set('snapshotDate', snapshotDate)
 
-  const res = await fetch(`${API_BASE}/hr/members/import?${params}`, {
-    method: 'POST',
-    // Content-Type 은 붙이지 않는다. multipart 경계는 브라우저가 정해야 한다.
-    headers: { Authorization: `Bearer ${token}` },
-    body: form,
-  })
+  let res: Response
+  try {
+    res = await fetch(`${API_BASE}/hr/members/import?${params}`, {
+      method: 'POST',
+      // Content-Type 은 붙이지 않는다. multipart 경계는 브라우저가 정해야 한다.
+      headers: { Authorization: `Bearer ${token}` },
+      body: form,
+    })
+  } catch (e) {
+    // fetch 가 던지는 TypeError(«Failed to fetch»)는 응답이 아예 없었다는 뜻이다. 거의 항상
+    // 백엔드의 CORS_ALLOWED_ORIGINS 에 이 사이트 주소가 없어서 브라우저가 막은 것이고,
+    // 드물게 서버가 꺼져 있거나 주소가 틀린 경우다. 원문 그대로 보여주면 아무도 못 고친다.
+    throw new Error(
+      `업로드 서버(${API_BASE})에 연결하지 못했습니다. ` +
+        `백엔드 환경변수 CORS_ALLOWED_ORIGINS 에 ${window.location.origin} 이 들어 있는지, ` +
+        `서버가 켜져 있는지 확인해 주세요. (원인: ${(e as Error).message})`,
+    )
+  }
   if (!res.ok) {
     const problem = await res.json().catch(() => null)
     throw new Error(problem?.detail ?? `${res.status} ${res.statusText}`)

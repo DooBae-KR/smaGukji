@@ -10,6 +10,7 @@ import { AgentPage } from './pages/AgentPage'
 import { BuilderPage } from './pages/BuilderPage'
 import { CatalogPage } from './pages/CatalogPage'
 import { DataPage } from './pages/DataPage'
+import { ReportPage } from './pages/ReportPage'
 import { HrLogin } from './pages/hr/HrLogin'
 import { HrPage } from './pages/hr/HrPage'
 import { PlanningPage } from './pages/PlanningPage'
@@ -174,6 +175,7 @@ export default function App() {
       {route === '/generals' && <CatalogPage kind="GENERAL" />}
       {route === '/tactics' && <CatalogPage kind="TACTIC" />}
       {route === '/data' && <DataPage />}
+      {route === '/report' && <ReportPage />}
       {route === ADMIN_ROUTE && isAdmin && <AdminPanel onMenusChanged={loadMenus} />}
     </div>
   )

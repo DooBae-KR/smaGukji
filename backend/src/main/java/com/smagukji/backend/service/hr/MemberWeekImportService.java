@@ -48,6 +48,10 @@ public class MemberWeekImportService {
 
     /** MemberWeek20260814.xlsx → 2026-08-14 */
     private static final Pattern FILE_DATE = Pattern.compile("(?i)memberweek[^0-9]*(\\d{8})");
+
+    /** 숫자 + 한국식 단위. «14만» → 140000, «1억2000만» → 120000000. */
+    private static final Pattern KOREAN_NUMBER =
+            Pattern.compile("(-?[0-9]+(?:\\.[0-9]+)?)([억만])?");
     private static final DateTimeFormatter YYYYMMDD = DateTimeFormatter.BASIC_ISO_DATE;
 
     // 시트 헤더 → 내부 필드. 동의어를 함께 받아 사소한 표기 차이를 흡수한다.
@@ -271,15 +275,46 @@ public class MemberWeekImportService {
     }
 
     private static Long number(Row row, Integer index, DataFormatter formatter) {
-        String raw = text(row, index, formatter);
-        if (raw.isBlank() || "--".equals(raw) || "-".equals(raw)) {
+        return parseNumber(text(row, index, formatter));
+    }
+
+    /**
+     * 숫자 셀을 읽는다. 게임 화면이 10만 이상을 «14만» 처럼 줄여 쓰기 때문에 그 표기도 받는다.
+     *
+     * <p>예전에는 «14만» 이 NumberFormatException 으로 조용히 null 이 됐다. 실제 시트
+     * (MemberWeek20260823.xlsx, 2026-08-25 확인)에서 주간 무훈 대부분이 이 표기라,
+     * 상위권 무훈이 통째로 비어 있었다.
+     *
+     * <p>«14만» 은 게임이 반올림해 보여주는 값이므로 140000 은 근사치다. 시트가 원본이라
+     * 더 정확한 값을 만들 방법이 없다 — 비워두는 것보다 낫다.
+     *
+     * <p>단위 뒤에 다른 글자가 붙으면(«14만점») 숫자가 아닌 것으로 본다. 억지로 읽으면
+     * 나중에 뜻이 다른 컬럼을 조용히 숫자로 만들어버린다.
+     */
+    static Long parseNumber(String raw) {
+        if (raw == null) {
             return null;
         }
-        try {
-            return new BigDecimal(raw.replace(",", "")).longValue();
-        } catch (NumberFormatException e) {
+        String s = raw.replace(",", "").replaceAll("\\s+", "");
+        if (s.isEmpty() || "--".equals(s) || "-".equals(s)) {
             return null;
         }
+        Matcher m = KOREAN_NUMBER.matcher(s);
+        BigDecimal total = null;
+        int consumed = 0;
+        while (m.find() && m.start() == consumed) {
+            BigDecimal value = new BigDecimal(m.group(1));
+            String unit = m.group(2);
+            if ("억".equals(unit)) {
+                value = value.multiply(BigDecimal.valueOf(100_000_000L));
+            } else if ("만".equals(unit)) {
+                value = value.multiply(BigDecimal.valueOf(10_000L));
+            }
+            total = total == null ? value : total.add(value);
+            consumed = m.end();
+        }
+        // 문자열을 끝까지 소비하지 못했으면 숫자가 아니다.
+        return total == null || consumed != s.length() ? null : total.longValue();
     }
 
     private static String nullIfBlank(String value) {

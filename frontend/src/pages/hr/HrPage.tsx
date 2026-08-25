@@ -241,6 +241,10 @@ export function HrPage({
           >
             {uploading ? '업로드 중…' : '시트 업로드'}
           </button>
+          {/* 파일명 규칙은 그대로다(MemberWeek + 연월일 8자리). 규칙을 넓히는 대신 여기서 알려준다. */}
+          <span className="muted" style={{ fontSize: 12 }}>
+            파일명은 <code>MemberWeek20260814.xlsx</code> 형식(연월일 8자리)으로 맞춰 주세요
+          </span>
 
           <div className="spacer" />
           <span className="muted">{session.displayName} ({hr.ROLE_LABEL[session.role]})</span>
@@ -265,7 +269,7 @@ export function HrPage({
           <div className="panel">
             <p className="muted">
               서버와 동맹을 입력하고 «조회»를 누르세요. 데이터가 없으면
-              «시트 업로드»로 <code>MemberWeek20260814.xlsx</code> 를 올리면 됩니다.
+              «시트 업로드»로 <code>MemberWeek20260814.xlsx</code> 형식(연월일 8자리)의 파일을 올리면 됩니다.
               기준일은 파일명에서 자동으로 읽습니다.
             </p>
           </div>

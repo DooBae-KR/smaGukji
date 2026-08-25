@@ -1106,3 +1106,290 @@ button.danger:hover:not(:disabled) {
 .owned-name.on::before {
   content: '✓ ';
 }
+
+/*
+ * 부대 탭.
+ *
+ * 부대 5개를 한 화면에 다 펼치면 슬롯이 15칸이라 카드가 우표만 해진다. 탭으로 하나씩 보되
+ * 탭마다 «몇 칸 찼는지»를 적어 다른 부대 상태도 알 수 있게 한다.
+ */
+.team-tabs {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin: 14px 0 12px;
+}
+
+.team-tab {
+  padding: 6px 14px;
+  border-radius: 6px;
+}
+
+.team-tab.active {
+  border-color: var(--border-strong);
+  background: var(--bg-panel-2);
+  color: var(--text);
+  font-weight: 600;
+}
+
+/* 고유전법 표시. 장착 칸이 아니라 «이미 들어 있는 것»이라 버튼이 아닌 글자로 둔다. */
+.slot-signature {
+  font-size: 11px;
+  color: var(--text-faint);
+  padding: 2px 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/*
+ * 이 덱의 장점.
+ *
+ * 지적 사항(.findings)과 나란히 읽히므로 모양을 맞추되 색으로 구분한다.
+ * 지적은 붉은 쪽, 장점은 강조색이다.
+ */
+.strengths {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.strengths li {
+  border-left: 2px solid var(--accent-dim);
+  padding: 2px 0 2px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.strengths strong {
+  font-size: 12px;
+  color: var(--text);
+}
+
+.strengths span {
+  font-size: 12px;
+  color: var(--text-dim);
+  line-height: 1.5;
+}
+
+/* 스프레드시트에 그대로 붙여 넣는 줄. 드래그로 집기 쉽게 배경을 준다. */
+.copyable {
+  margin-top: 8px;
+  padding: 6px 8px;
+  background: var(--bg-panel-2);
+  border-radius: 4px;
+  user-select: all;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+/*
+ * 선택 팝업의 카드 색.
+ *
+ * 규칙이 보유 등록 화면과 반대다. 그쪽은 «가진 것» 을 밝히는 화면이라 안 가진 카드를
+ * 흐리게 두지만, 이쪽은 «고를 수 있는 것» 을 밝히는 화면이다. 그래서 고를 수 있는 카드가
+ * 컬러이고, 이미 다른 부대에 넣어 고를 수 없는 카드가 흑백이다.
+ *
+ * 목록에서 아예 빼지 않는 이유는, 빼버리면 «내가 저 장수를 어디에 썼더라» 를 확인할
+ * 길이 없어지기 때문이다. 흑백으로 두면 못 고른다는 것과 이미 쓰고 있다는 것이
+ * 한눈에 같이 보인다(어느 부대인지는 마우스를 올리면 나온다).
+ */
+.collection-card.pick {
+  opacity: 1;
+  filter: none;
+}
+
+.collection-card.pick:disabled {
+  opacity: 0.55;
+  filter: grayscale(1);
+  cursor: not-allowed;
+}
+
+/* 못 고르는 카드에는 hover 반응도 주지 않는다. 눌릴 것처럼 보이면 안 된다. */
+.collection-card:disabled:hover {
+  opacity: 0.55;
+  border-color: var(--border);
+}
+
+/* 선택 팝업의 나라별·등급별 묶음 머리글. */
+.card-group {
+  margin-bottom: 12px;
+}
+
+.card-group-head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 4px 2px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+}
+
+/*
+ * 티어덱 상세.
+ *
+ * 시트에 적힌 진형·병종·병서·장비·탈것·스탯을 표 그대로 보여준다. 장수가 3명이라
+ * 열이 넉넉해 보이지만, 병서처럼 한 칸에 세 줄이 들어가는 항목이 있어 좁은 화면에서는
+ * 가로로 넘친다. 그래서 표만 따로 가로 스크롤한다.
+ */
+.tier-detail {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 14px;
+  background: var(--bg-panel-2);
+}
+
+.tier-detail-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.tier-badge {
+  background: var(--accent-dim);
+  color: #1a1510;
+  border-radius: 4px;
+  padding: 1px 7px;
+  font-weight: 700;
+  font-size: 11px;
+}
+
+.tier-formation {
+  border: 1px solid var(--border-strong);
+  border-radius: 4px;
+  padding: 1px 7px;
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+.tier-table-wrap {
+  overflow-x: auto;
+  margin: 8px 0;
+}
+
+.tier-table {
+  min-width: 420px;
+}
+
+.tier-table th[scope='row'] {
+  white-space: nowrap;
+  color: var(--text-dim);
+  font-weight: 500;
+  text-align: left;
+}
+
+.tier-table td {
+  vertical-align: top;
+  font-size: 12px;
+}
+
+/*
+ * 전보 화면.
+ *
+ * 게임의 «전투 결과» 화면과 같은 구성으로 둔다. 좌우로 아군·적군이 나뉘고 각 편에 장수 셋이
+ * 선다. 게임 화면을 보면서 옮겨 적는 화면이라 배치가 다르면 눈이 계속 자리를 다시 찾는다.
+ */
+.report-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.report-head label {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 12px;
+}
+
+.report-head input,
+.report-head select {
+  width: auto;
+  min-width: 110px;
+}
+
+.report-board {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+/* 좁은 화면에서는 좌우로 못 세운다. 위아래로 쌓는다. */
+@media (max-width: 900px) {
+  .report-board {
+    grid-template-columns: 1fr;
+  }
+}
+
+.report-side {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px;
+}
+
+/* 게임과 같은 색 감각. 아군이 파랑, 적군이 붉은 쪽이다. */
+.report-side.ours {
+  border-color: #3a4a6b;
+}
+
+.report-side.theirs {
+  border-color: #6b3a3a;
+}
+
+.report-side-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 8px;
+  font-size: 13px;
+}
+
+/* 전보 목록의 승패 색. .bad 는 이미 있으므로 승리 쪽만 더한다. */
+.good {
+  color: #6bbf7b;
+  font-weight: 600;
+}
+
+.bad {
+  color: var(--bad, #d9707a);
+  font-weight: 600;
+}
+
+/*
+ * 전보의 장수 한 줄. 이름 하나 + 전법 셋.
+ *
+ * 카드 그림을 두지 않는다. 여섯 명을 옮겨 적는 화면이라 한 건을 빨리 넣는 것이 중요한데,
+ * 그림은 자리를 크게 먹으면서 입력에는 아무 도움이 안 된다.
+ */
+.report-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) repeat(3, minmax(0, 1fr));
+  gap: 4px;
+  margin-bottom: 5px;
+}
+
+.report-row select {
+  font-size: 11px;
+  padding: 4px 6px;
+  min-width: 0;
+  width: 100%;
+}
+
+/* 첫 칸(장수)은 나머지와 구분되게 조금 진하게 둔다. */
+.report-row-general {
+  font-weight: 600;
+}
+
+@media (max-width: 620px) {
+  .report-row {
+    grid-template-columns: 1fr 1fr;
+  }
+}

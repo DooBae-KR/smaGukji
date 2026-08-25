@@ -96,7 +96,7 @@ jobs:
       - name: 백엔드 스테이지 빌드 (실패 시 로그를 주석으로 노출)
         run: |
           set +e
-          docker build --target backend -f Dockerfile -t smagukji-diag . > /tmp/build.log 2>&1
+          docker build --target backend-api -f Dockerfile -t smagukji-diag . > /tmp/build.log 2>&1
           code=$?
           if [ $code -ne 0 ]; then
             echo "----- build.log tail -----"

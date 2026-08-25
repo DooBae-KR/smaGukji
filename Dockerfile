@@ -1,8 +1,16 @@
-# 프론트엔드와 백엔드를 하나의 이미지로 묶는다.
-# 프론트는 백엔드 JAR 의 static/ 에 들어가 같은 오리진에서 서빙되므로 CORS 가 필요 없다.
+# 두 가지로 빌드할 수 있다.
 #
-#   docker build -t smagukji .
-#   docker run -p 8080:8080 --env-file .env -e SPRING_PROFILES_ACTIVE=prod smagukji
+#   docker build -t smagukji .                    ← 기본. 프론트를 JAR 안에 넣은 한 덩어리
+#   docker build --target api -t smagukji-api .   ← 백엔드만. 프론트는 nginx 가 따로 서빙
+#
+# 왜 둘인가
+#   Render·Northflank 처럼 «컨테이너 하나» 만 받는 곳에서는 프론트를 JAR 안에 넣어야
+#   같은 오리진이 되어 CORS 를 안 탄다. 반면 Oracle 처럼 nginx 를 앞에 두는 구성에서는
+#   정적 파일을 nginx 가 직접 주는 편이 낫다 — 자바가 카드 이미지 160장과 판독기 부품
+#   14MB 를 흘려보낼 이유가 없고, 백엔드를 재시작해도 화면은 살아 있다.
+#
+#   --target api 로 빌드하면 BuildKit 이 프론트 빌드 단계를 아예 건너뛴다. 그래서
+#   백엔드만 고칠 때는 npm 빌드를 기다리지 않아도 된다.
 
 # ---------------------------------------------------------------
 # 1) 프론트엔드 빌드
@@ -34,9 +42,9 @@ ENV VITE_SUPABASE_URL=$VITE_SUPABASE_URL \
 RUN npm run build
 
 # ---------------------------------------------------------------
-# 2) 백엔드 빌드 (+ 프론트 산출물 주입)
+# 2) 백엔드 빌드 준비 — 소스와 Gradle 캐시까지만
 # ---------------------------------------------------------------
-FROM eclipse-temurin:17-jdk AS backend
+FROM eclipse-temurin:17-jdk AS backend-base
 WORKDIR /app
 
 # Gradle 래퍼와 빌드 스크립트만 먼저 복사해 의존성 캐시를 만든다.
@@ -48,31 +56,47 @@ RUN sed -i 's/\r$//' gradlew && chmod +x gradlew \
     && ./gradlew --version --no-daemon
 
 COPY backend/src ./src
-# 프론트 빌드 결과를 정적 자원으로 넣는다. (Gradle 의 -PbuildFrontend 는 쓰지 않는다)
-COPY --from=frontend /app/dist ./src/main/resources/static
 
+# ---------------------------------------------------------------
+# 3-a) 백엔드만 빌드 (프론트는 nginx 가 따로 준다)
+# ---------------------------------------------------------------
+FROM backend-base AS backend-api
 # 한 줄로 묶으면 실패했을 때 어느 단계인지 알 수 없다.
-# CI 로그를 인증 없이 읽을 수 없으므로, 실패 시 명령 이름만 보고 원인을 좁힐 수 있게 나눈다.
 RUN ./gradlew compileJava --no-daemon --stacktrace
 RUN ./gradlew processResources --no-daemon --stacktrace
 RUN ./gradlew bootJar --no-daemon -x test --stacktrace
 
 # ---------------------------------------------------------------
-# 3) 런타임
+# 3-b) 프론트를 JAR 안에 넣어 빌드 (한 덩어리로 배포할 때)
 # ---------------------------------------------------------------
-FROM eclipse-temurin:17-jre-alpine
+FROM backend-base AS backend-full
+COPY --from=frontend /app/dist ./src/main/resources/static
+RUN ./gradlew compileJava --no-daemon --stacktrace
+RUN ./gradlew processResources --no-daemon --stacktrace
+RUN ./gradlew bootJar --no-daemon -x test --stacktrace
+
+# ---------------------------------------------------------------
+# 4) 런타임 — 두 갈래가 같은 바탕을 쓴다
+# ---------------------------------------------------------------
+FROM eclipse-temurin:17-jre-alpine AS runtime-base
 WORKDIR /app
 
 # root 로 돌리지 않는다.
 RUN addgroup -S app && adduser -S app -G app
+# 헬스체크에 쓴다. alpine JRE 이미지에는 curl 도 wget 도 없다.
+RUN apk add --no-cache wget
 USER app
-
-COPY --from=backend --chown=app:app /app/build/libs/*.jar app.jar
 
 ENV SPRING_PROFILES_ACTIVE=prod \
     JAVA_OPTS="-XX:MaxRAMPercentage=75 -XX:+UseSerialGC"
-
 EXPOSE 8080
 
 # 컨테이너 메모리에 맞춰 힙을 잡도록 JAVA_OPTS 를 셸 확장으로 넘긴다.
 ENTRYPOINT ["sh", "-c", "exec java $JAVA_OPTS -jar app.jar"]
+
+FROM runtime-base AS api
+COPY --from=backend-api --chown=app:app /app/build/libs/*.jar app.jar
+
+# 기본 타깃. 아무것도 지정하지 않으면 이것이 만들어진다.
+FROM runtime-base AS allinone
+COPY --from=backend-full --chown=app:app /app/build/libs/*.jar app.jar

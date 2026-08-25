@@ -1,0 +1,124 @@
+# nginx — SSL 종단, 프론트 서빙, API 프록시.
+#
+# nginx 이미지가 /etc/nginx/templates/*.template 을 envsubst 로 처리해 conf.d 에 내려놓는다.
+# 그래서 ${DOMAIN} 은 컨테이너의 DOMAIN 환경변수로 채워진다.
+#
+# ⚠️ NGINX_ENVSUBST_FILTER=DOMAIN 을 반드시 함께 준다. 이게 없으면 envsubst 가 $host,
+#    $remote_addr 같은 «nginx 변수» 까지 빈 문자열로 바꿔 설정이 통째로 망가진다.
+#
+# ⚠️ SSL 인증서는 도메인에만 발급된다. Let's Encrypt 는 IP 주소로는 내주지 않는다.
+
+# 인증서 갱신 챌린지만 평문으로 열고 나머지는 https 로 보낸다.
+server {
+    listen 80;
+    listen [::]:80;
+    server_name ${DOMAIN};
+
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+    }
+
+    location / {
+        return 301 https://$host$request_uri;
+    }
+}
+
+server {
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    http2 on;
+    server_name ${DOMAIN};
+
+    ssl_certificate     /etc/letsencrypt/live/${DOMAIN}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/${DOMAIN}/privkey.pem;
+
+    # 낡은 프로토콜은 끈다. TLS 1.2 아래를 쓰는 브라우저는 없다.
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_prefer_server_ciphers off;
+    ssl_session_cache shared:SSL:10m;
+    ssl_session_timeout 1d;
+    ssl_session_tickets off;
+
+    ssl_stapling on;
+    ssl_stapling_verify on;
+    resolver 1.1.1.1 8.8.8.8 valid=300s;
+    resolver_timeout 5s;
+
+    # netlify.toml 에 있던 것과 같은 규칙이다. 두 곳에서 서빙할 수 있으므로 한쪽만
+    # 지키면 배포처에 따라 보안 수준이 달라진다.
+    add_header X-Content-Type-Options    "nosniff"                         always;
+    add_header X-Frame-Options           "DENY"                            always;
+    add_header Referrer-Policy           "strict-origin-when-cross-origin" always;
+    add_header Strict-Transport-Security "max-age=31536000"                always;
+
+    # 전보 사진과 인사 xlsx 를 올린다. 기본값 1MB 로는 막힌다.
+    client_max_body_size 20m;
+
+    gzip on;
+    gzip_vary on;
+    gzip_min_length 1024;
+    gzip_types text/plain text/css application/json application/javascript
+               application/wasm image/svg+xml;
+
+    root /usr/share/nginx/html;
+    index index.html;
+
+    # ---------------------------------------------------------------
+    # API — 백엔드로 넘긴다
+    # ---------------------------------------------------------------
+    #
+    # 프론트가 같은 도메인의 /api 로 부르고 여기서 백엔드로 넘어간다. 브라우저에게는
+    # 같은 오리진이라 CORS 를 아예 타지 않는다.
+    location /api/ {
+        proxy_pass http://api:8080;
+        proxy_http_version 1.1;
+        proxy_set_header Host              $host;
+        proxy_set_header X-Real-IP         $remote_addr;
+        proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+        # 이게 없으면 Spring 이 자기를 http 로 알고 리다이렉트를 http 로 만든다.
+        proxy_set_header X-Forwarded-Proto $scheme;
+
+        # 시트 파싱과 시뮬레이션은 오래 걸린다. 기본 60초로는 끊긴다.
+        proxy_connect_timeout 10s;
+        proxy_send_timeout    300s;
+        proxy_read_timeout    300s;
+    }
+
+    # 살아 있는지 확인하는 곳. 바깥에서도 볼 수 있게 열어 둔다.
+    location = /actuator/health {
+        proxy_pass http://api:8080/actuator/health;
+        proxy_set_header Host $host;
+        access_log off;
+    }
+
+    # ---------------------------------------------------------------
+    # 정적 파일 — nginx 가 직접 준다
+    # ---------------------------------------------------------------
+    #
+    # 카드 이미지는 파일 이름이 내용 해시다. 내용이 바뀌면 이름도 바뀌므로 영구 캐시해도
+    # 안전하다. Vite 가 만든 assets/ 도 같은 규칙이다.
+    location ~* ^/(cards|assets)/ {
+        expires 1y;
+        add_header Cache-Control "public, max-age=31536000, immutable" always;
+        try_files $uri =404;
+    }
+
+    # 판독기 부품(wasm·학습 데이터)은 합쳐서 14MB 다. 매번 받으면 곤란하지만 파일 이름에
+    # 버전이 없어 영구 캐시는 위험하다. 하루만 잡아 둔다.
+    location ~* ^/(tesseract|tessdata)/ {
+        expires 1d;
+        add_header Cache-Control "public, max-age=86400" always;
+        try_files $uri =404;
+    }
+
+    # index.html 은 항상 새로 받아야 새 빌드가 반영된다.
+    location = /index.html {
+        add_header Cache-Control "public, max-age=0, must-revalidate" always;
+    }
+
+    # SPA 라우팅. 주소창에 /report 를 직접 쳐도 index.html 이 뜨게 한다.
+    # 위에서 정적 파일을 먼저 처리했으므로 이미지가 여기 걸리지 않는다.
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+}

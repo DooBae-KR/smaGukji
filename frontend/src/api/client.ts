@@ -1,7 +1,15 @@
 import cardImages from '../generated/card-images.json'
 import { supabase } from '../lib/supabase'
 
-export const API_BASE = import.meta.env.VITE_API_BASE_URL ?? '/api'
+/**
+ * 계산 전용 백엔드의 주소.
+ *
+ * <p>⚠️ `??` 가 아니라 `||` 다. 빈 문자열도 «안 넣은 것» 으로 봐야 한다. .env.example 은
+ * «비워두면 같은 오리진의 /api 로 간다» 고 적어 두었는데, `??` 는 빈 문자열을 값으로 쳐서
+ * API_BASE 가 «» 가 된다. 그러면 요청이 /api 를 건너뛴 «/hr/...» 로 나가 vite 프록시에도
+ * 백엔드에도 닿지 않는다. 실제로 이것 때문에 시트 업로드가 엉뚱한 곳으로 갔다.
+ */
+export const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api'
 
 /**
  * 계산 전용 백엔드(Render) 호출.

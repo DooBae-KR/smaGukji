@@ -116,3 +116,19 @@ export const RARITY_LABEL: Record<string, string> = {
   LEGEND: '전설',
   HERO: '영웅',
 }
+
+/**
+ * 매 턴 이 전법이 발동할 확률. 백엔드 {@code Tactic.perTurnTriggerProbability()} 와 같은 계산이다.
+ *
+ * <p>확률 판정이 없는 분류(지휘·패시브 등)는 상시 적용이라 1 이다.
+ * 채점할 수 없으면 null 을 돌려준다 — 0 으로 메우면 «데이터가 없는 전법»과
+ * «절대 발동하지 않는 전법»이 구분되지 않는다.
+ */
+export function perTurnTriggerProbability(
+  category: string | null | undefined,
+  triggerRate: number | null | undefined,
+): number | null {
+  if (!category) return null
+  if (!TRIGGERS_BY_CHANCE.has(category)) return 1
+  return triggerRate == null ? null : triggerRate / 100
+}
