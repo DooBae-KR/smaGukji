@@ -98,6 +98,18 @@ app:
   simulation:
     max-iterations: ${SIMULATION_MAX_ITERATIONS:200000}
     default-iterations: ${SIMULATION_DEFAULT_ITERATIONS:20000}
+  integration:
+    # 외부 시뮬레이션 프로젝트가 장수·전법·버프를 읽어갈 때 쓰는 열쇠.
+    #
+    # 사람이 아니라 서버가 부르는 창구라 로그인 화면을 거칠 수 없다. 미리 나눠 가진
+    # 열쇠 하나로 /api/integration/** 만 연다(읽기 전용).
+    #
+    # 비워두면 그 구간이 통째로 닫힌다. 설정을 빠뜨린 채 데이터가 열려 있는 것보다 낫다.
+    #   생성 예: openssl rand -base64 32
+    api-key: ${INTEGRATION_API_KEY:}
+    # 시뮬레이션 «화면» 이 브라우저에서 직접 부를 때만 그 주소를 넣는다.
+    # 서버끼리 부르면 CORS 자체가 필요 없다. 브라우저에 열쇠가 노출된다는 점에 주의.
+    allowed-origins: ${INTEGRATION_ALLOWED_ORIGINS:}
 
 management:
   endpoints:

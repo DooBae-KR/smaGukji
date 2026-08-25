@@ -34,7 +34,7 @@ jobs:
 
       - name: 백엔드 단위 테스트
         working-directory: backend
-        run: ./gradlew test --tests "com.smagukji.backend.service.*" --no-daemon
+        run: ./gradlew test --tests "com.smagukji.backend.service.*" --tests "com.smagukji.backend.web.*" --no-daemon
 
       - name: 테스트 리포트 보관
         if: always()

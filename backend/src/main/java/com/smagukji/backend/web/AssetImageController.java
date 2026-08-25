@@ -70,7 +70,12 @@ public class AssetImageController {
         return importService.importAll();
     }
 
-    private static ResponseEntity<byte[]> imageResponse(AssetImage image) {
+    /**
+     * 이미지 응답. 연동 창구
+     * ({@link com.smagukji.backend.web.integration.IntegrationController}) 도 같은 형태로
+     * 내려야 해서 열어 둔다.
+     */
+    public static ResponseEntity<byte[]> imageResponse(AssetImage image) {
         if (image.getData() == null) {
             return ResponseEntity.status(302)
                     .header("Location", image.getExternalUrl())

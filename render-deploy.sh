@@ -66,6 +66,15 @@ SUPABASE_URL_VAL="$(val SUPABASE_URL)"
 # 브라우저가 모든 요청을 막아 «아무것도 안 되는» 것처럼 보인다.
 CORS_VAL="$(val CORS_ALLOWED_ORIGINS)"
 
+# 외부 시뮬레이션 프로젝트가 마스터 데이터를 읽어갈 때 쓰는 열쇠.
+# 없어도 배포는 되지만 /api/integration/** 이 닫힌 채로 뜬다.
+INTEGRATION_KEY="$(val INTEGRATION_API_KEY)"
+INTEGRATION_ORIGINS="$(val INTEGRATION_ALLOWED_ORIGINS)"
+if [ -z "$INTEGRATION_KEY" ]; then
+  echo "ℹ️  INTEGRATION_API_KEY 가 없습니다. 시뮬레이션 연동 API 는 닫힌 채로 배포됩니다."
+  echo "    쓰려면:  openssl rand -base64 32  →  .env 의 INTEGRATION_API_KEY"
+fi
+
 # 프론트가 이 이미지에 함께 빌드된다. 없으면 화면이 «Supabase 설정이 없습니다» 로 뜬다.
 ANON_KEY="$(val SUPABASE_ANON_KEY)"
 [ -n "$ANON_KEY" ] || echo "⚠️  SUPABASE_ANON_KEY 가 없습니다. 화면에서 로그인할 수 없습니다."
@@ -116,7 +125,8 @@ EXISTING=$(api GET "/services?name=$NAME&limit=1" | node -e "
 ENVVARS=$(DB_URL="$DB_URL" DB_USER="$DB_USER" DB_PASS="$DB_PASS" \
   GENERAL_SHEET="$GENERAL_SHEET" ROSTER_SHEET="$ROSTER_SHEET" \
   TACTIC_SHEET="$TACTIC_SHEET" BUFF_SHEET="$BUFF_SHEET" \
-  SUPABASE_URL_VAL="$SUPABASE_URL_VAL" CORS_VAL="$CORS_VAL" ANON_KEY="$ANON_KEY" node -e "
+  SUPABASE_URL_VAL="$SUPABASE_URL_VAL" CORS_VAL="$CORS_VAL" ANON_KEY="$ANON_KEY" \
+  INTEGRATION_KEY="$INTEGRATION_KEY" INTEGRATION_ORIGINS="$INTEGRATION_ORIGINS" node -e "
   const e=[
     ['SPRING_PROFILES_ACTIVE','prod'],
     ['SUPABASE_DB_URL',process.env.DB_URL],
@@ -143,6 +153,9 @@ ENVVARS=$(DB_URL="$DB_URL" DB_USER="$DB_USER" DB_PASS="$DB_PASS" \
     // «전법»·«버프» 탭. 전법 등급과 버프 용어 설명이 여기 있다.
     ['TACTIC_SHEET_CSV_URL',process.env.TACTIC_SHEET||''],
     ['BUFF_SHEET_CSV_URL',process.env.BUFF_SHEET||''],
+    // 시뮬레이션 프로젝트가 읽어가는 창구. 비어 있으면 그 구간이 닫힌다.
+    ['INTEGRATION_API_KEY',process.env.INTEGRATION_KEY||''],
+    ['INTEGRATION_ALLOWED_ORIGINS',process.env.INTEGRATION_ORIGINS||''],
   ];
   for(const [k,v] of e) if(v===undefined) { console.error('값 누락: '+k); process.exit(1); }
   console.log(JSON.stringify(e.map(([key,value])=>({key,value:String(value)}))));

@@ -60,6 +60,17 @@ services:
       - key: CORS_ALLOWED_ORIGINS
         sync: false
 
+      # 외부 시뮬레이션 프로젝트가 장수·전법·버프를 읽어갈 때 쓰는 열쇠(X-API-Key).
+      # 대시보드에서 직접 넣는다. 비워두면 /api/integration/** 이 통째로 닫힌다.
+      #   생성: openssl rand -base64 32
+      - key: INTEGRATION_API_KEY
+        sync: false
+
+      # 시뮬레이션 «화면» 이 브라우저에서 직접 부를 때만 그 주소를 넣는다.
+      # 서버끼리 부르면 CORS 가 필요 없으므로 보통 비워둔다.
+      - key: INTEGRATION_ALLOWED_ORIGINS
+        sync: false
+
       # «데이터» 탭의 시트 불러오기 버튼이 쓰는 값.
       # 공개 시트 URL 이라 비밀값은 아니지만, 시트가 바뀔 수 있어 대시보드에서 넣는다.
       # (./render-deploy.sh 를 쓰면 .env 값으로 자동 주입된다)

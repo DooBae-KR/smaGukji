@@ -123,6 +123,8 @@ java -jar build/libs/backend-0.0.1-SNAPSHOT.jar
 | `CORS_ALLOWED_ORIGINS` | | (prod에선 비움) | 프론트를 별도 도메인에 둘 때만 |
 | `DB_POOL_MAX_SIZE` | | `5` | 512MB 인스턴스면 `3` |
 | `PORT` / `SERVER_PORT` | | `8080` | 플랫폼이 주입하기도 합니다 |
+| `INTEGRATION_API_KEY` | | | 시뮬레이션 프로젝트가 데이터를 읽어갈 때 쓰는 열쇠. 비우면 `/api/integration/**` 이 닫힘 |
+| `INTEGRATION_ALLOWED_ORIGINS` | | | 시뮬레이션 **화면**이 브라우저에서 직접 부를 때만 |
 | `GENERAL_SHEET_CSV_URL` | | | 무장 분류 시트(CSV export). «데이터» 탭 불러오기 버튼용 |
 | `ROSTER_SHEET_CSV_URL` | | | 장수·전법 이름 마스터 시트(CSV export) |
 
@@ -144,6 +146,9 @@ java -jar build/libs/backend-0.0.1-SNAPSHOT.jar
 ```bash
 curl https://<배포주소>/actuator/health     # {"status":"UP"}
 curl https://<배포주소>/api/menus           # []  (비로그인이면 빈 배열이 정상)
+
+# 시뮬레이션 연동을 켰다면 (열쇠가 맞으면 {"ok":true})
+curl -H "X-API-Key: $INTEGRATION_API_KEY" https://<배포주소>/api/integration/v1/ping
 ```
 
 브라우저로 접속하면 로그인 화면이 뜹니다. `/hr`, `/builder` 같은 주소를 직접 쳐도 SPA 라우팅이 동작합니다.

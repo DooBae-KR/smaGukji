@@ -214,6 +214,78 @@ name,category,abilityType,quality,triggerRate,targetCount,source,roleTags,effect
 | `POST` | `/api/hr/cautions/{id}/resolve` | 주의 해제 (기록은 유지) |
 | `DELETE` | `/api/hr/cautions/{id}` | 주의 사유 완전 삭제 |
 
+### 시뮬레이션 프로젝트 연동 (`X-API-Key` 헤더 필요)
+
+밖에 따로 떠 있는 **시뮬레이션 프로젝트**가 장수·전법·버프를 읽어가는 창구입니다.
+값의 원본은 여기(구글 시트 → Supabase)이고, 저쪽에서 표를 복사해 두면 시트를 고칠 때마다
+두 곳이 어긋납니다. 그래서 복사 대신 **읽기 전용 API** 로 그때그때 가져가게 합니다.
+
+| 메서드 | 경로 | 설명 |
+|---|---|---|
+| `GET` | `/api/integration/v1/ping` | 열쇠 확인용. `{"ok":true}` |
+| `GET` | `/api/integration/v1/snapshot` | **장수·전법·버프 한 번에** (권장) |
+| `GET` | `/api/integration/v1/generals?faction=SHU` | 장수만 |
+| `GET` | `/api/integration/v1/tactics?category=ACTIVE` | 전법만 |
+| `GET` | `/api/integration/v1/buffs` | 버프·이상 상태 사전 |
+| `GET` | `/api/integration/v1/assets/{category}/{name}/image` | 카드 이미지 (ETag + 30일 캐시) |
+
+응답 본문은 화면이 쓰는 것과 **같은 모양**입니다. 표현이 갈라지면 «시뮬레이션이 본 값» 과
+«화면이 본 값» 이 달라지는데, 그러면 이 창구를 만든 이유와 정면으로 어긋나기 때문입니다.
+
+**인증** — 사람이 아니라 서버가 부르는 창구라 로그인 화면을 거칠 수 없습니다.
+미리 나눠 가진 열쇠 하나를 `X-API-Key` 헤더로 보냅니다.
+
+```bash
+export SMAGUKJI=https://smagukji.onrender.com
+curl -H "X-API-Key: $INTEGRATION_API_KEY" $SMAGUKJI/api/integration/v1/ping
+curl -H "X-API-Key: $INTEGRATION_API_KEY" $SMAGUKJI/api/integration/v1/snapshot
+```
+
+`Authorization: Bearer` 로는 받지 않습니다. 앞단의 Supabase 토큰 검증 필터가 먼저 집어
+«토큰이 깨졌다» 며 401 을 냅니다.
+
+**열쇠 만들기 · 넣기**
+
+```bash
+openssl rand -base64 32          # 24자 이상. 짧으면 기동 로그에 경고가 남습니다
+```
+
+| 환경변수 | 어디에 | 설명 |
+|---|---|---|
+| `INTEGRATION_API_KEY` | smaGukji 백엔드(Render) · 시뮬레이션 프로젝트 | 같은 값을 양쪽에 넣습니다 |
+| `INTEGRATION_ALLOWED_ORIGINS` | smaGukji 백엔드 | 시뮬레이션 **화면**이 브라우저에서 직접 부를 때만 |
+
+> **비워두면 이 구간은 통째로 닫힙니다.** 설정을 빠뜨린 채 데이터가 열려 있는 것보다 낫습니다.
+> 서버끼리 부르면 CORS 가 필요 없으니 `INTEGRATION_ALLOWED_ORIGINS` 는 보통 비워둡니다.
+> 브라우저에서 직접 부르면 열쇠가 사용자에게 그대로 노출된다는 점을 알고 쓰세요.
+
+**받아쓰는 쪽 요령**
+
+- `snapshot` 은 세 목록을 한 트랜잭션에서 읽습니다. 따로 세 번 부르면 그 사이에 시트 동기화가
+  끼어들어 반쯤 새 값, 반쯤 옛 값을 들고 갈 수 있습니다.
+- 응답의 `dataUpdatedAt` 이 지난번과 같으면 바뀐 것이 없습니다. 그대로 캐시를 쓰면 됩니다.
+- 카드 이미지 경로는 `imageUrl` 필드에 `/api/assets/...` 로 들어 있습니다. 그 경로는 사람의
+  토큰이 있어야 열리니, 앞부분을 `/api/integration/v1/assets/` 로 바꿔서 부르세요.
+- **무료 Render 인스턴스는 잠듭니다.** 잠든 뒤 첫 요청은 수십 초 걸리므로 타임아웃을 넉넉히
+  주고, 실패하면 한 번 더 시도하세요.
+
+```python
+import os, requests
+
+BASE = os.environ["SMAGUKJI_API_BASE"]        # https://smagukji.onrender.com
+KEY = os.environ["INTEGRATION_API_KEY"]
+
+def snapshot():
+    r = requests.get(f"{BASE}/api/integration/v1/snapshot",
+                     headers={"X-API-Key": KEY}, timeout=90)
+    r.raise_for_status()
+    return r.json()
+
+data = snapshot()
+print(data["counts"], data["dataUpdatedAt"])
+by_name = {g["name"]: g for g in data["generals"]}
+```
+
 ## 인사팀 — 동맹원 관리
 
 ### 로그인 · 회원가입
