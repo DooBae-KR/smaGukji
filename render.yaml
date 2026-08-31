@@ -60,10 +60,6 @@ services:
       - key: CORS_ALLOWED_ORIGINS
         sync: false
 
-      # 전보 스크린샷 인식(NVIDIA 비전 모델). 비어 있으면 «전보 검증» 화면의 인식만 안 된다.
-      - key: NVIDIA_API_KEY
-        sync: false
-
       # 외부 시뮬레이션 프로젝트가 장수·전법·버프를 읽어갈 때 쓰는 열쇠(X-API-Key).
       # 대시보드에서 직접 넣는다. 비워두면 /api/integration/** 이 통째로 닫힌다.
       #   생성: openssl rand -base64 32
