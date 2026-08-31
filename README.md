@@ -189,6 +189,7 @@ name,category,abilityType,quality,triggerRate,targetCount,source,roleTags,effect
 | `GET` | `/api/assets/{category}/{name}/image` | 카드 이미지 (ETag + 30일 캐시) |
 | `POST` | `/api/assets/import` | 로컬 폴더에서 이미지 재적재 (sha256 비교, 멱등) |
 | `GET` | `/api/agent/teams` | AI 오피스 4개 팀 + 직원 + 대사 |
+| `POST` | `/api/ocr/battle-report` | 전보 스크린샷 → 인식된 텍스트 (multipart, 필드명 `image`) |
 | `POST` | `/api/sheets/sync` | **구글 시트에서 장수·전법 한 번에 불러오기** |
 | `POST` | `/api/generals/sync-sheet` | 무장 시트만 동기화 |
 | `GET` | `/api/generals/sheet-vocabulary` | 시트에 쓸 수 있는 분류 값 |
@@ -285,6 +286,36 @@ data = snapshot()
 print(data["counts"], data["dataUpdatedAt"])
 by_name = {g["name"]: g for g in data["generals"]}
 ```
+
+### 전보 검증 (`/ocr`)
+
+시뮬레이션(«시뮬팀 · 편성» 화면의 몬테카를로 발동 계산)이 실제 게임과 맞는지, 전보(전투
+결과) 스크린샷으로 확인하는 화면입니다. 세 단계로 나뉩니다.
+
+1. **인식** — 스크린샷을 `POST /api/ocr/battle-report` 로 올리면, 서버가 NVIDIA 의 비전
+   모델(OpenAI 호환 `chat/completions`)을 대신 불러 화면에 보이는 글자를 그대로 옮겨 적어
+   돌려줍니다. 열쇠(`NVIDIA_API_KEY`)는 서버에만 있습니다 — 브라우저에 두면 페이지 소스만
+   봐도 새어나가고, 사용량이 그 열쇠로 청구되기 때문입니다.
+2. **해석** — `frontend/src/ocr/parse.ts` 가 그 텍스트에서 턴 머리글과 전법 이름을
+   찾습니다. OCR 오탈자를 감안해 편집 거리로 이름을 매칭하고, 「발동」·「시전」 같은 낱말이
+   원문에 있으면 그 낱말이 있는 줄만 «발동» 으로 셉니다. 서버 API 가 아니라 순수 함수라,
+   전보를 다시 올리지 않아도 규칙만 고쳐 즉시 다시 돌릴 수 있습니다.
+3. **대조** — `frontend/src/ocr/verify.ts` 가 여러 전보를 합쳐, 전법별 관측 발동률의
+   95% Wilson 신뢰구간을 시뮬레이션이 가정하는 발동확률과 비교합니다. 기회(턴)가
+   30 회 미만이면 판정하지 않고 «표본 부족» 으로 남깁니다 — 전보 한두 장으로는 30%와
+   45%를 구분할 수 없기 때문입니다.
+
+> ⚠️ 전보의 정확한 문구(턴 표기, 발동을 알리는 낱말)를 아직 확인하지 못해, `parse.ts` 의
+> 규칙은 잠정입니다. 실제 전보 원문을 화면의 «인식된 원문» 에서 확인하고
+> `TURN_PATTERNS`·`TRIGGER_HINTS` 를 맞춰 주세요.
+
+**환경변수**
+
+| 변수 | 필수 | 기본값 | 설명 |
+|---|:--:|---|---|
+| `NVIDIA_API_KEY` | ● | | https://build.nvidia.com 에서 발급 |
+| `NVIDIA_OCR_MODEL` | | `meta/llama-3.2-90b-vision-instruct` | 카탈로그의 다른 비전 모델로 바꿀 때 |
+| `NVIDIA_API_BASE_URL` | | `https://integrate.api.nvidia.com/v1/chat/completions` | |
 
 ## 인사팀 — 동맹원 관리
 

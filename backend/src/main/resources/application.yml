@@ -98,6 +98,18 @@ app:
   simulation:
     max-iterations: ${SIMULATION_MAX_ITERATIONS:200000}
     default-iterations: ${SIMULATION_DEFAULT_ITERATIONS:20000}
+  ocr:
+    # 전보 스크린샷 인식(NVIDIA 비전 모델, OpenAI 호환 chat/completions).
+    #
+    # 열쇠가 없으면 «전보 검증» 화면이 뜨긴 하지만 인식 버튼을 누르면 오류를 돌려준다.
+    # NVIDIA API 사용은 비용이 들 수 있다 — https://build.nvidia.com 에서 확인하세요.
+    nvidia:
+      api-key: ${NVIDIA_API_KEY:}
+      base-url: ${NVIDIA_API_BASE_URL:https://integrate.api.nvidia.com/v1/chat/completions}
+      # 카탈로그에서 확인한 비전 모델로 바꾸려면 이 값만 바꾸면 된다.
+      model: ${NVIDIA_OCR_MODEL:meta/llama-3.2-90b-vision-instruct}
+      max-tokens: ${NVIDIA_OCR_MAX_TOKENS:2048}
+      timeout-seconds: ${NVIDIA_OCR_TIMEOUT_SECONDS:60}
   integration:
     # 외부 시뮬레이션 프로젝트가 장수·전법·버프를 읽어갈 때 쓰는 열쇠.
     #

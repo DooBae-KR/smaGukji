@@ -69,6 +69,23 @@ export const TACTIC_QUALITY_LABEL: Record<string, string> = {
 const TRIGGERS_BY_CHANCE = new Set(['ACTIVE', 'PURSUIT', 'ASSAULT'])
 
 /**
+ * 이 전법이 «한 턴에» 발동할 확률(0~1). 모르면 null.
+ *
+ * 백엔드 Tactic.perTurnTriggerProbability() 와 같은 계산이다. 전보 검증이 기대 발동 수를
+ * 낼 때 시뮬레이션과 같은 모형을 써야 해서 여기에도 둔다 — 한쪽만 고치면 «검증» 이
+ * 자기 자신을 검증하는 꼴이 된다.
+ */
+export function perTurnTriggerProbability(
+  category: string | null | undefined,
+  triggerRate: number | null | undefined,
+): number | null {
+  if (!category) return null
+  // 지휘·패시브처럼 상시 적용되는 분류는 판정 없이 매 턴 걸린다.
+  if (!TRIGGERS_BY_CHANCE.has(category)) return 1
+  return triggerRate == null ? null : triggerRate / 100
+}
+
+/**
  * 분석에 쓸 데이터가 갖춰졌는지.
  * 백엔드의 {@code perTurnTriggerProbability() != null} 과 같은 판정이다.
  */
@@ -76,9 +93,7 @@ export function isTacticDataComplete(
   category: string | null | undefined,
   triggerRate: number | null | undefined,
 ): boolean {
-  if (!category) return false
-  if (!TRIGGERS_BY_CHANCE.has(category)) return true
-  return triggerRate != null
+  return perTurnTriggerProbability(category, triggerRate) != null
 }
 
 /** 코드를 라벨로. 모르는 코드는 코드 그대로 보여 눈에 띄게 한다. */

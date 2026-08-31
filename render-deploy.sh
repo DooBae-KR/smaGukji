@@ -66,6 +66,13 @@ SUPABASE_URL_VAL="$(val SUPABASE_URL)"
 # 브라우저가 모든 요청을 막아 «아무것도 안 되는» 것처럼 보인다.
 CORS_VAL="$(val CORS_ALLOWED_ORIGINS)"
 
+# 전보 인식(NVIDIA 비전 모델)에 쓰는 열쇠. 없어도 배포는 되지만 «전보 검증» 화면의
+# 인식 버튼이 오류를 낸다.
+NVIDIA_KEY="$(val NVIDIA_API_KEY)"
+if [ -z "$NVIDIA_KEY" ]; then
+  echo "ℹ️  NVIDIA_API_KEY 가 없습니다. 전보 인식은 배포 후 오류를 냅니다."
+fi
+
 # 외부 시뮬레이션 프로젝트가 마스터 데이터를 읽어갈 때 쓰는 열쇠.
 # 없어도 배포는 되지만 /api/integration/** 이 닫힌 채로 뜬다.
 INTEGRATION_KEY="$(val INTEGRATION_API_KEY)"
@@ -126,7 +133,8 @@ ENVVARS=$(DB_URL="$DB_URL" DB_USER="$DB_USER" DB_PASS="$DB_PASS" \
   GENERAL_SHEET="$GENERAL_SHEET" ROSTER_SHEET="$ROSTER_SHEET" \
   TACTIC_SHEET="$TACTIC_SHEET" BUFF_SHEET="$BUFF_SHEET" \
   SUPABASE_URL_VAL="$SUPABASE_URL_VAL" CORS_VAL="$CORS_VAL" ANON_KEY="$ANON_KEY" \
-  INTEGRATION_KEY="$INTEGRATION_KEY" INTEGRATION_ORIGINS="$INTEGRATION_ORIGINS" node -e "
+  INTEGRATION_KEY="$INTEGRATION_KEY" INTEGRATION_ORIGINS="$INTEGRATION_ORIGINS" \
+  NVIDIA_KEY="$NVIDIA_KEY" node -e "
   const e=[
     ['SPRING_PROFILES_ACTIVE','prod'],
     ['SUPABASE_DB_URL',process.env.DB_URL],
@@ -156,6 +164,8 @@ ENVVARS=$(DB_URL="$DB_URL" DB_USER="$DB_USER" DB_PASS="$DB_PASS" \
     // 시뮬레이션 프로젝트가 읽어가는 창구. 비어 있으면 그 구간이 닫힌다.
     ['INTEGRATION_API_KEY',process.env.INTEGRATION_KEY||''],
     ['INTEGRATION_ALLOWED_ORIGINS',process.env.INTEGRATION_ORIGINS||''],
+    // 전보 인식. 비어 있으면 «전보 검증» 화면의 인식 버튼만 오류를 낸다.
+    ['NVIDIA_API_KEY',process.env.NVIDIA_KEY||''],
   ];
   for(const [k,v] of e) if(v===undefined) { console.error('값 누락: '+k); process.exit(1); }
   console.log(JSON.stringify(e.map(([key,value])=>({key,value:String(value)}))));

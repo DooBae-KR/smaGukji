@@ -123,6 +123,7 @@ java -jar build/libs/backend-0.0.1-SNAPSHOT.jar
 | `CORS_ALLOWED_ORIGINS` | | (prod에선 비움) | 프론트를 별도 도메인에 둘 때만 |
 | `DB_POOL_MAX_SIZE` | | `5` | 512MB 인스턴스면 `3` |
 | `PORT` / `SERVER_PORT` | | `8080` | 플랫폼이 주입하기도 합니다 |
+| `NVIDIA_API_KEY` | | | 전보 스크린샷 인식(비전 모델). 비우면 «전보 검증» 화면의 인식 버튼이 오류를 냄 |
 | `INTEGRATION_API_KEY` | | | 시뮬레이션 프로젝트가 데이터를 읽어갈 때 쓰는 열쇠. 비우면 `/api/integration/**` 이 닫힘 |
 | `INTEGRATION_ALLOWED_ORIGINS` | | | 시뮬레이션 **화면**이 브라우저에서 직접 부를 때만 |
 | `GENERAL_SHEET_CSV_URL` | | | 무장 분류 시트(CSV export). «데이터» 탭 불러오기 버튼용 |
