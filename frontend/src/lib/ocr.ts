@@ -245,6 +245,23 @@ export async function readBattleImage(
     generals.push({ name, tactics })
   }
 
+  // ⚠️ 임시 디버그 로그. 판독이 자꾸 빗나가는 사진이 있어, 어느 칸에서 무엇을 읽었는지
+  // 콘솔에서 바로 볼 수 있게 남겨 둔다. 원인을 찾으면 이 블록은 지운다.
+  console.group('[전보 OCR 원문]')
+  console.log('사진 크기', `${source.width}×${source.height}`)
+  console.log('진형', { ourFormation, enemyFormation })
+  console.log('병력', { ourTroops, enemyTroops })
+  console.table(
+    generals.map((g, i) => ({
+      자리: i < 3 ? `아군 ${i + 1}` : `적군 ${i - 2}`,
+      이름원문: g.name,
+      전법1: g.tactics[0]?.name,
+      전법2: g.tactics[1]?.name,
+      전법3: g.tactics[2]?.name,
+    })),
+  )
+  console.groupEnd()
+
   return { generals, ourFormation, enemyFormation, ourTroops, enemyTroops }
 }
 
