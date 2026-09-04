@@ -1,0 +1,81 @@
+.boss-timer-app {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+.boss-timer-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 0;
+  flex-wrap: wrap;
+}
+
+.boss-timer-toolbar .spacer {
+  flex: 1;
+}
+
+.boss-timer-notice {
+  width: 100%;
+  box-sizing: border-box;
+  font-family: inherit;
+}
+
+.boss-timer-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 8px;
+}
+
+.boss-timer-table th,
+.boss-timer-table td {
+  border-bottom: 1px solid #ddd;
+  padding: 6px 8px;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.boss-timer-table input[type='number'] {
+  width: 48px;
+}
+
+.status-dot {
+  border-radius: 999px;
+  width: 28px;
+  height: 28px;
+  border: none;
+  color: #fff;
+  cursor: pointer;
+}
+
+.status-dot.on {
+  background: #4f6bed;
+}
+
+.status-dot.off {
+  background: #e0625f;
+}
+
+.remaining {
+  display: inline-block;
+  min-width: 90px;
+  font-weight: 600;
+}
+
+button.danger {
+  background: #e0625f;
+  color: #fff;
+}
+
+.boss-timer-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 360px;
+}
+
+.boss-timer-footer {
+  margin-top: 16px;
+  font-size: 12px;
+}
