@@ -1,5 +1,10 @@
 # 배포 — Render 를 떠나며
 
+> **2026-09-04 갱신**: 이 문서가 짜던 Oracle/Northflank/Koyeb 이전 계획 대신, 실제로는
+> 백엔드가 하던 일(시트 동기화·CSV import·인사 xlsx 업로드·자산 카운트)을 **Netlify Functions**
+> 로 옮기고 Render 서비스는 지웠다. 아래 내용은 그 결정에 이르기까지의 기록으로 남겨 둔다
+> (`render.yaml` / `render-deploy.sh` 는 저장소에서 삭제됨).
+
 ## 왜 옮기는가
 
 Render 무료 인스턴스는 **유휴 15분이면 잠든다.** 깨는 데 수십 초가 걸리고, 그동안 편성·전보
