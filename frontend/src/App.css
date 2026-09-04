@@ -32,9 +32,15 @@
   flex-wrap: wrap;
 }
 
-.tabs button {
+.tabs button,
+.tabs .tab-link {
   border-radius: 999px;
   padding: 6px 16px;
+}
+
+.tabs .tab-link {
+  display: inline-block;
+  text-decoration: none;
 }
 
 .tabs button[aria-selected='true'] {
