@@ -95,6 +95,11 @@ export default function App() {
   if (!session) {
     return (
       <div className="app">
+        <nav className="tabs" role="tablist">
+          <a className="tab-link" href="/boss-timer.html" target="_blank" rel="noopener noreferrer">
+            ⚡ 제우스 보스타이머
+          </a>
+        </nav>
         <header className="app-header">
           <h1>천하결전 오피스</h1>
           <span className="sub">덱 시뮬레이션 · 동맹 인사관리</span>
