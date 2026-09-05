@@ -211,14 +211,13 @@
 .boss-timer-table {
   width: 100%;
   border-collapse: collapse;
-  min-width: 1040px;
+  min-width: 820px;
   table-layout: fixed;
 }
 
 .boss-timer-table col.col-status { width: 52px; }
 .boss-timer-table col.col-notify { width: 48px; }
 .boss-timer-table col.col-name { width: 230px; }
-.boss-timer-table col.col-schedule { width: 220px; }
 .boss-timer-table col.col-remaining { width: 330px; }
 .boss-timer-table col.col-spawn-at { width: 90px; }
 .boss-timer-table col.col-delete { width: 40px; }
@@ -395,6 +394,15 @@
   line-height: 1.4;
 }
 
+.schedule-gear {
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border-radius: 999px;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+
 .schedule-editor {
   margin-top: 6px;
   display: flex;
@@ -458,4 +466,76 @@
 
 .muted {
   color: var(--bt-muted);
+}
+
+/* 폰 화면: 표를 가로 스크롤 없이 카드 목록으로 바꾼다. */
+@media (max-width: 680px) {
+  .boss-timer-app {
+    padding: 12px 8px 32px;
+  }
+
+  .boss-timer-table-wrap {
+    overflow-x: visible;
+  }
+
+  .boss-timer-table {
+    min-width: 0;
+    display: block;
+  }
+
+  .boss-timer-table thead {
+    display: none;
+  }
+
+  .boss-timer-table tbody {
+    display: block;
+  }
+
+  .boss-timer-table tr {
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    border: 1px solid var(--bt-border);
+    border-radius: 12px;
+    padding: 8px 40px 8px 10px;
+    margin-bottom: 10px;
+  }
+
+  .boss-timer-table td {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 0;
+    border-bottom: none;
+    width: 100%;
+  }
+
+  .boss-timer-table td[data-label]:not([data-label=""])::before {
+    content: attr(data-label);
+    flex: 0 0 60px;
+    font-size: 11px;
+    color: var(--bt-muted);
+  }
+
+  /* 상태·알림은 라벨 없이 이름 줄 위에 나란히 붙인다. */
+  .boss-timer-table td[data-label='상태'],
+  .boss-timer-table td[data-label='알림'] {
+    display: inline-flex;
+    width: auto;
+    padding: 0;
+    order: -1;
+  }
+
+  /* 삭제 버튼은 카드 오른쪽 위에 떠 있게 한다. */
+  .boss-timer-table td[data-label=''] {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    width: auto;
+    padding: 0;
+  }
+
+  .remaining-inputs {
+    row-gap: 6px;
+  }
 }
