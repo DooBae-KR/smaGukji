@@ -94,6 +94,14 @@ export function BossTimerPage() {
   // 방 만들기 화면용
   const [createPassword, setCreatePassword] = useState('')
   const [createPollToken, setCreatePollToken] = useState('')
+  const [joinRoomInput, setJoinRoomInput] = useState('')
+
+  /** 서버 이름만 알면 URL을 몰라도 그 방으로 바로 들어간다. */
+  const goToRoom = (name: string) => {
+    const trimmed = name.trim()
+    if (!trimmed) return
+    window.location.href = `/boss-timer.html?room=${encodeURIComponent(trimmed)}`
+  }
 
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 1000)
@@ -435,8 +443,25 @@ export function BossTimerPage() {
       <div className="boss-timer-app">
         <div className="boss-timer-card boss-timer-setup">
           <h1>⚡ 보스 타이머</h1>
-          <p className="muted">"{slug}" 방이 아직 없습니다. 비밀번호와 봇 폴링용 토큰을 정해 새로 만드세요.</p>
+          <p className="muted">"{slug}" 방이 아직 없습니다.</p>
           {error && <div className="error-box">{error}</div>}
+
+          <div className="boss-timer-panel">
+            <label>이미 만들어진 서버 이름을 아시나요?</label>
+            <div className="join-row">
+              <input
+                type="text"
+                placeholder="서버 이름 (예: hera2)"
+                value={joinRoomInput}
+                onChange={(e) => setJoinRoomInput(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && goToRoom(joinRoomInput)}
+              />
+              <button className="primary" onClick={() => goToRoom(joinRoomInput)}>입장</button>
+            </div>
+          </div>
+
+          <div className="setup-divider">또는 새로 만들기</div>
+
           <div className="boss-timer-panel">
             <label>방 비밀번호 (조회·수정 시 사용)</label>
             <input type="password" value={createPassword} onChange={(e) => setCreatePassword(e.target.value)} />
@@ -454,6 +479,9 @@ export function BossTimerPage() {
       <header className="boss-timer-header">
         <h1>⚡ 보스 타이머</h1>
         <span className="boss-timer-room-name">방: {slug}</span>
+        <button className="switch-room" onClick={() => { const n = prompt('들어갈 서버 이름을 입력하세요', slug); if (n) goToRoom(n) }}>
+          다른 서버로
+        </button>
         <div className="spacer" />
         {pushState === 'subscribed' && (
           <button className="ok" onClick={handleDisablePush}>🔔 폰 알림 켜짐</button>
