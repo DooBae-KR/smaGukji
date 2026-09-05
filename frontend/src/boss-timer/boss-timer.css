@@ -436,6 +436,19 @@
   font-size: 12px;
 }
 
+.install-help {
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.install-help p {
+  margin: 6px 0;
+}
+
+.ios-share-icon {
+  display: inline-block;
+}
+
 .boss-timer-footer {
   margin-top: 8px;
   font-size: 12px;
