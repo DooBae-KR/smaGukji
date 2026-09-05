@@ -348,6 +348,63 @@
   font-variant-numeric: tabular-nums;
 }
 
+.sub-info {
+  font-size: 11px;
+  color: var(--bt-muted);
+  margin-top: 2px;
+}
+
+.schedule-badge {
+  background: var(--bt-accent-dim);
+  border: 1px solid var(--bt-border);
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 12px;
+  color: var(--bt-text);
+  white-space: nowrap;
+}
+
+.schedule-editor {
+  margin-top: 6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  background: var(--bt-bg);
+  border: 1px solid var(--bt-border);
+  border-radius: 10px;
+  padding: 8px;
+}
+
+.schedule-fields {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.schedule-fields input[type='number'] {
+  width: 56px;
+}
+
+.auto-badge {
+  font-size: 12px;
+  color: var(--bt-muted);
+  background: var(--bt-off);
+  border-radius: 999px;
+  padding: 4px 10px;
+}
+
+.boss-timer-app button.death {
+  background: color-mix(in srgb, var(--bt-danger) 12%, transparent);
+  border-color: var(--bt-danger);
+  color: var(--bt-danger);
+}
+
+.import-msg {
+  margin: 6px 0 0;
+  font-size: 12px;
+}
+
 .boss-timer-footer {
   margin-top: 8px;
   font-size: 12px;
