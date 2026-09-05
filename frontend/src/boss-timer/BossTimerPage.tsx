@@ -459,6 +459,15 @@ export function BossTimerPage() {
 
         <div className="boss-timer-table-wrap">
           <table className="boss-timer-table">
+            <colgroup>
+              <col className="col-status" />
+              <col className="col-notify" />
+              <col className="col-name" />
+              <col className="col-schedule" />
+              <col className="col-remaining" />
+              <col className="col-spawn-at" />
+              <col className="col-delete" />
+            </colgroup>
             <thead>
               <tr>
                 <th>상태</th>
@@ -476,7 +485,7 @@ export function BossTimerPage() {
                 const scheduling = openSchedule === b.boss_id
                 return (
                   <tr key={b.boss_id} className={b.is_active ? '' : 'row-inactive'}>
-                    <td>
+                    <td className="nowrap">
                       <button
                         className={`status-dot ${b.is_active ? 'on' : 'off'}`}
                         onClick={() => handleToggleActive(b)}
@@ -485,7 +494,7 @@ export function BossTimerPage() {
                         {b.is_active ? 'O' : 'X'}
                       </button>
                     </td>
-                    <td>
+                    <td className="nowrap">
                       <button
                         className={`notify-toggle ${b.notify_enabled ? 'on' : 'off'}`}
                         onClick={() => handleToggleNotify(b)}
@@ -613,8 +622,8 @@ export function BossTimerPage() {
                         )}
                       </div>
                     </td>
-                    <td className="spawn-at">{formatSpawnAt(b.next_spawn_at)}</td>
-                    <td>
+                    <td className="spawn-at nowrap">{formatSpawnAt(b.next_spawn_at)}</td>
+                    <td className="nowrap">
                       <button className="danger ghost" onClick={() => handleDelete(b)} title="삭제">✕</button>
                     </td>
                   </tr>
