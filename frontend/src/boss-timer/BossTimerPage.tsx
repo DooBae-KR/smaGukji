@@ -63,7 +63,6 @@ function scheduleLabel(b: BossTimerRow): string {
 }
 
 interface RowEditState {
-  name: string
   days: string
   hours: string
   minutes: string
@@ -85,7 +84,6 @@ export function BossTimerPage() {
   const [error, setError] = useState<string | null>(null)
   const [now, setNow] = useState(() => Date.now())
   const [edits, setEdits] = useState<Record<string, RowEditState>>({})
-  const [sort, setSort] = useState<'name' | 'remaining'>('name')
   const [openSchedule, setOpenSchedule] = useState<string | null>(null)
   const [importing, setImporting] = useState(false)
   const [importMsg, setImportMsg] = useState<string | null>(null)
@@ -170,7 +168,6 @@ export function BossTimerPage() {
 
   const editFor = (b: BossTimerRow): RowEditState =>
     edits[b.boss_id] ?? {
-      name: b.name,
       days: '0',
       hours: '0',
       minutes: '0',
@@ -267,16 +264,6 @@ export function BossTimerPage() {
     }
   }
 
-  const handleSaveName = async (b: BossTimerRow) => {
-    if (!requirePassword()) return
-    const name = editFor(b).name.trim()
-    if (!name) {
-      setError('보스 이름은 비울 수 없습니다.')
-      return
-    }
-    await saveBoss(b, { name })
-  }
-
   const handleShift = async (b: BossTimerRow, delta: number) => {
     if (!requirePassword()) return
     try {
@@ -287,9 +274,10 @@ export function BossTimerPage() {
     }
   }
 
-  const handleToggleActive = async (b: BossTimerRow) => {
+  const handleSetActive = async (b: BossTimerRow, isActive: boolean) => {
     if (!requirePassword()) return
-    await saveBoss(b, { isActive: !b.is_active })
+    if (b.is_active === isActive) return
+    await saveBoss(b, { isActive })
   }
 
   const handleToggleNotify = async (b: BossTimerRow) => {
@@ -426,15 +414,13 @@ export function BossTimerPage() {
     }
   }
 
+  // 켜진(ON) 보스가 먼저, 그 안에서는 등장이 빠른 순.
   const sortedBosses = useMemo(() => {
-    const list = [...bosses]
-    if (sort === 'remaining') {
-      list.sort((a, b) => new Date(a.next_spawn_at).getTime() - new Date(b.next_spawn_at).getTime())
-    } else {
-      list.sort((a, b) => a.sort_order - b.sort_order || a.name.localeCompare(b.name))
-    }
-    return list
-  }, [bosses, sort])
+    return [...bosses].sort((a, b) => {
+      if (a.is_active !== b.is_active) return a.is_active ? -1 : 1
+      return new Date(a.next_spawn_at).getTime() - new Date(b.next_spawn_at).getTime()
+    })
+  }, [bosses])
 
   if (exists === null) {
     return (
@@ -536,13 +522,7 @@ export function BossTimerPage() {
 
       <div className="boss-timer-card">
         <div className="boss-timer-toolbar">
-          <label className="sort-label">
-            정렬
-            <select value={sort} onChange={(e) => setSort(e.target.value as 'name' | 'remaining')}>
-              <option value="name">이름순</option>
-              <option value="remaining">남은시간순</option>
-            </select>
-          </label>
+          <span className="muted sort-label">켜진 보스 · 등장 임박 순</span>
           <div className="spacer" />
           <button onClick={handleImportSheet} disabled={importing}>
             {importing ? '불러오는 중…' : '📄 시트에서 불러오기'}
@@ -556,7 +536,6 @@ export function BossTimerPage() {
           <table className="boss-timer-table">
             <colgroup>
               <col className="col-status" />
-              <col className="col-notify" />
               <col className="col-name" />
               <col className="col-remaining" />
               <col className="col-spawn-at" />
@@ -565,7 +544,6 @@ export function BossTimerPage() {
             <thead>
               <tr>
                 <th>상태</th>
-                <th>알림</th>
                 <th>보스 이름</th>
                 <th>남은 시간</th>
                 <th>등장 시간</th>
@@ -579,38 +557,41 @@ export function BossTimerPage() {
                 return (
                   <tr key={b.boss_id} className={b.is_active ? '' : 'row-inactive'}>
                     <td className="nowrap" data-label="상태">
-                      <button
-                        className={`status-dot ${b.is_active ? 'on' : 'off'}`}
-                        onClick={() => handleToggleActive(b)}
-                        title="클릭해서 켜기/끄기"
-                      >
-                        {b.is_active ? 'O' : 'X'}
-                      </button>
-                    </td>
-                    <td className="nowrap" data-label="알림">
-                      <button
-                        className={`notify-toggle ${b.notify_enabled ? 'on' : 'off'}`}
-                        onClick={() => handleToggleNotify(b)}
-                        title="카카오톡 알림 켜기/끄기"
-                      >
-                        {b.notify_enabled ? '🔔' : '🔕'}
-                      </button>
+                      <div className="active-radio" role="radiogroup" aria-label="보스 상태">
+                        <label className={b.is_active ? 'checked' : ''}>
+                          <input
+                            type="radio"
+                            name={`active-${b.boss_id}`}
+                            checked={b.is_active}
+                            onChange={() => handleSetActive(b, true)}
+                          />
+                          ON
+                        </label>
+                        <label className={!b.is_active ? 'checked' : ''}>
+                          <input
+                            type="radio"
+                            name={`active-${b.boss_id}`}
+                            checked={!b.is_active}
+                            onChange={() => handleSetActive(b, false)}
+                          />
+                          OFF
+                        </label>
+                      </div>
                     </td>
                     <td data-label="이름">
                       <div className="name-cell">
                         {b.seq_label && <span className="seq-label">{b.seq_label}</span>}
-                        <input
-                          className="name-input"
-                          type="text"
-                          value={e.name}
-                          onChange={(ev) => updateEdit(b.boss_id, { name: ev.target.value })}
-                          onKeyDown={(ev) => ev.key === 'Enter' && handleSaveName(b)}
-                        />
-                        {e.name !== b.name && (
-                          <button className="save-name" onClick={() => handleSaveName(b)} title="이름 저장">
-                            저장
-                          </button>
-                        )}
+                        <span className="name-text">
+                          {b.level != null && <span className="level-tag">Lv{b.level}</span>}
+                          {b.name}
+                        </span>
+                        <button
+                          className={`notify-toggle ${b.notify_enabled ? 'on' : 'off'}`}
+                          onClick={() => handleToggleNotify(b)}
+                          title="카카오톡 알림 켜기/끄기"
+                        >
+                          {b.notify_enabled ? '🔔' : '🔕'}
+                        </button>
                         <button
                           className="schedule-gear"
                           onClick={() => setOpenSchedule(scheduling ? null : b.boss_id)}
@@ -619,7 +600,7 @@ export function BossTimerPage() {
                           ⚙
                         </button>
                       </div>
-                      {b.location && <div className="sub-info">{b.location}{b.level ? ` · Lv${b.level}` : ''}</div>}
+                      {b.location && <div className="sub-info">{b.location}</div>}
                       {scheduling && (
                         <div className="schedule-editor">
                           <select
@@ -722,7 +703,7 @@ export function BossTimerPage() {
               })}
               {sortedBosses.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="empty-row">아직 등록된 보스가 없습니다. "+ 보스 추가" 로 시작하세요.</td>
+                  <td colSpan={5} className="empty-row">아직 등록된 보스가 없습니다. "+ 보스 추가" 로 시작하세요.</td>
                 </tr>
               )}
             </tbody>
