@@ -5,9 +5,34 @@ import { BOSS_SHEET_CSV_URL, DEFAULT_BOSS_SEED, parseBossSheet } from './sheetIm
 import { getSubscriptionState, subscribeToPush, unsubscribeFromPush } from './webPush'
 import './boss-timer.css'
 
+/** 표준 DOM 타입에는 없는 크롬 전용 이벤트. */
+interface BeforeInstallPromptEvent extends Event {
+  prompt: () => Promise<void>
+}
+
+const LAST_ROOM_KEY = 'boss-timer-last-room'
+
+/**
+ * 홈 화면에 아이콘으로 추가(PWA)해서 열면 매니페스트의 start_url 만 뜨고 ?room= 은 못
+ * 들고 온다. 그래서 마지막으로 본 방을 localStorage 에 기억해뒀다가, 주소에 방이 없으면
+ * 그걸로 대신 연다.
+ */
 function getSlug(): string {
   const params = new URLSearchParams(window.location.search)
-  return params.get('room') || 'main'
+  const fromUrl = params.get('room')
+  if (fromUrl) {
+    try {
+      window.localStorage.setItem(LAST_ROOM_KEY, fromUrl)
+    } catch {
+      // 프라이빗 모드 등에서 localStorage 를 못 쓰면 그냥 넘어간다.
+    }
+    return fromUrl
+  }
+  try {
+    return window.localStorage.getItem(LAST_ROOM_KEY) || 'main'
+  } catch {
+    return 'main'
+  }
 }
 
 function formatRemaining(nextSpawnAt: string, now: number): string {
@@ -65,6 +90,8 @@ export function BossTimerPage() {
   const [importing, setImporting] = useState(false)
   const [importMsg, setImportMsg] = useState<string | null>(null)
   const [pushState, setPushState] = useState<'unsupported' | 'denied' | 'subscribed' | 'unsubscribed' | 'loading'>('loading')
+  const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null)
+  const [showInstallHelp, setShowInstallHelp] = useState(false)
 
   // 방 만들기 화면용
   const [createPassword, setCreatePassword] = useState('')
@@ -78,6 +105,23 @@ export function BossTimerPage() {
   useEffect(() => {
     getSubscriptionState().then(setPushState)
   }, [])
+
+  // 안드로이드 크롬은 "홈 화면에 추가"를 이 이벤트로 직접 띄울 수 있다. 아이폰 사파리는
+  // 이 이벤트 자체가 없어서(플랫폼 제약) 대신 안내 문구로 대체한다.
+  useEffect(() => {
+    const handler = (e: Event) => {
+      e.preventDefault()
+      setInstallPrompt(e as BeforeInstallPromptEvent)
+    }
+    window.addEventListener('beforeinstallprompt', handler)
+    return () => window.removeEventListener('beforeinstallprompt', handler)
+  }, [])
+
+  const handleInstall = async () => {
+    if (!installPrompt) return
+    await installPrompt.prompt()
+    setInstallPrompt(null)
+  }
 
   const handleEnablePush = async () => {
     try {
@@ -433,7 +477,24 @@ export function BossTimerPage() {
         )}
         {pushState === 'denied' && <span className="muted">알림 권한이 거부돼 있습니다(브라우저 설정에서 허용 필요)</span>}
         {pushState === 'unsupported' && <span className="muted">이 브라우저는 푸시 알림 미지원</span>}
+        {installPrompt ? (
+          <button onClick={handleInstall}>📲 앱으로 설치</button>
+        ) : (
+          <button onClick={() => setShowInstallHelp((v) => !v)}>📲 홈 화면에 추가</button>
+        )}
       </header>
+
+      {showInstallHelp && !installPrompt && (
+        <div className="boss-timer-card install-help">
+          <b>홈 화면에 추가하는 법</b>
+          <p>
+            <b>아이폰(사파리)</b>: 아래 공유 버튼 <span className="ios-share-icon">⬆️</span> → "홈 화면에 추가". 아이폰은
+            이렇게 추가해야만 알림(푸시)이 옵니다 — 사파리로만 열어두면 알림이 안 옵니다.
+          </p>
+          <p><b>안드로이드(크롬)</b>: 오른쪽 위 점 3개 메뉴 → "홈 화면에 추가" 또는 "앱 설치".</p>
+          <button onClick={() => setShowInstallHelp(false)}>닫기</button>
+        </div>
+      )}
 
       <div className="boss-timer-card">
         <div className="boss-timer-toolbar">
