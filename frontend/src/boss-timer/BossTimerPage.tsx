@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import * as api from './api'
 import type { BossTimerRow, SpawnType } from './api'
-import { BOSS_SHEET_CSV_URL, parseBossSheet } from './sheetImport'
+import { BOSS_SHEET_CSV_URL, DEFAULT_BOSS_SEED, parseBossSheet } from './sheetImport'
 import './boss-timer.css'
 
 function getSlug(): string {
@@ -122,6 +122,9 @@ export function BossTimerPage() {
     }
     try {
       await api.createRoom(slug, createPassword, createPollToken)
+      // 방을 막 만들었으니 기본 보스 목록을 바로 채운다. 나중에 시트가 바뀌면
+      // "시트에서 불러오기" 로 다시 갱신하면 된다.
+      await api.bulkImport(slug, createPassword, DEFAULT_BOSS_SEED)
       setExists(true)
       await reload()
     } catch (e) {

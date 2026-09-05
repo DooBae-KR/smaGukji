@@ -6,6 +6,36 @@ export const BOSS_SHEET_CSV_URL =
 
 const WEEKDAY_KO: Record<string, number> = { 일: 0, 월: 1, 화: 2, 수: 3, 목: 4, 금: 5, 토: 6 }
 
+/**
+ * 방을 처음 만들 때 자동으로 넣는 기본 보스 목록.
+ *
+ * 시트를 그때그때 브라우저에서 불러오는 "📄 시트에서 불러오기" 와 달리, 이건 방 생성 시각에
+ * 딱 한 번 넣는 값이라 여기 그대로 박아둔다(2026-09-05 시트 스냅샷). CORS 로 시트를 못 읽는
+ * 상황이어도 새 방에는 항상 보스 목록이 채워지게 하기 위해서다. 시트가 바뀌면 방을 만든 뒤
+ * "시트에서 불러오기" 로 최신값을 다시 반영하면 된다.
+ */
+export const DEFAULT_BOSS_SEED: BulkImportRow[] = [
+  { name: '아라크네', level: 50, location: '테실리아', spawnType: 2, weekday: 3, fixedTime: '21:00' },
+  { name: '메데이아', level: 45, location: '[인터] 타르타로스 2층', spawnType: 2, weekday: 6, fixedTime: '21:00' },
+  { name: '케르베로스', level: 75, location: '[인터] 타르타로스5계 심판', spawnType: 2, weekday: 5, fixedTime: '21:00' },
+  { name: '아르고스', level: 65, location: '자하브', spawnType: 2, weekday: 1, fixedTime: '21:00' },
+  { name: '크리소파고스', level: 35, location: '테실리아 평원', spawnType: 1, respawnMinMinutes: 480, respawnMaxMinutes: 480 },
+  { name: '아모르포스', level: 35, location: '침식된 경작지', spawnType: 1, respawnMinMinutes: 480, respawnMaxMinutes: 480 },
+  { name: '트라손', level: 40, location: '고대 신전 유적지', spawnType: 1, respawnMinMinutes: 480, respawnMaxMinutes: 480 },
+  { name: '이오칸토스', level: 45, location: '아르보리아스 폐허', spawnType: 1, respawnMinMinutes: 720, respawnMaxMinutes: 720 },
+  { name: '키니 러우리', level: 45, location: '금지된 숲', spawnType: 1, respawnMinMinutes: 720, respawnMaxMinutes: 720 },
+  { name: '알라스토르', level: 55, location: '무법자의 길목', spawnType: 1, respawnMinMinutes: 480, respawnMaxMinutes: 480 },
+  { name: '베딕스', level: 60, location: '공헌의 제단', spawnType: 1, respawnMinMinutes: 480, respawnMaxMinutes: 480 },
+  { name: '고트시스', level: 60, location: '황 금리라 부락', spawnType: 1, respawnMinMinutes: 480, respawnMaxMinutes: 480 },
+  { name: '트리포크', level: 65, location: '가시 덤불 지대', spawnType: 1, respawnMinMinutes: 720, respawnMaxMinutes: 720 },
+  { name: '거인의 세번째 손', level: 70, location: '유적지 폐허', spawnType: 1, respawnMinMinutes: 720, respawnMaxMinutes: 720 },
+  { name: '봉인된 아모르포스', level: 40, location: '[인터] 타르타로스 1층', spawnType: 1, respawnMinMinutes: 360, respawnMaxMinutes: 600 },
+  { name: '봉인된 브델레스', level: 45, location: '[인터] 타르타로스 2층', spawnType: 1, respawnMinMinutes: 720, respawnMaxMinutes: 720 },
+  { name: '봉인된 스코톨라스마', level: 60, location: '[인터] 타르타로스 3층', spawnType: 1, respawnMinMinutes: 360, respawnMaxMinutes: 600 },
+  { name: '심연의 틈', level: 0, location: '테실리아', spawnType: 3, fixedTime: '12:00' },
+  { name: '심연의 틈', level: 0, location: '테실리아', spawnType: 3, fixedTime: '20:00' },
+]
+
 /** "오전 8:00:00" 같은 값에서 오전/오후 는 무시하고 시:분 을 «분 단위 길이» 로 읽는다(쿨타임형용). */
 function parseDurationMinutes(raw: string): number | null {
   const m = raw.trim().match(/(\d{1,2}):(\d{2})/)
