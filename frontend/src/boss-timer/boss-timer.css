@@ -46,9 +46,14 @@
 
 .boss-timer-header {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 12px;
   margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.boss-timer-header .spacer {
+  flex: 1;
 }
 
 .boss-timer-header h1 {
