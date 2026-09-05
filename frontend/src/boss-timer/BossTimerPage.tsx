@@ -138,6 +138,7 @@ export function BossTimerPage() {
         name: b.name,
         sortOrder: b.sort_order,
         isActive: b.is_active,
+        notifyEnabled: b.notify_enabled,
         nextSpawnAt: spawnAt.toISOString(),
         respawnIntervalMin: b.respawn_interval_min,
       })
@@ -168,6 +169,7 @@ export function BossTimerPage() {
         name: b.name,
         sortOrder: b.sort_order,
         isActive: b.is_active,
+        notifyEnabled: b.notify_enabled,
         nextSpawnAt: b.next_spawn_at,
         respawnIntervalMin: intervalMin,
       })
@@ -186,6 +188,26 @@ export function BossTimerPage() {
         name: b.name,
         sortOrder: b.sort_order,
         isActive: !b.is_active,
+        notifyEnabled: b.notify_enabled,
+        nextSpawnAt: b.next_spawn_at,
+        respawnIntervalMin: b.respawn_interval_min,
+      })
+      await reload()
+    } catch (err) {
+      setError((err as Error).message)
+    }
+  }
+
+  const handleToggleNotify = async (b: BossTimerRow) => {
+    if (!requirePassword()) return
+    try {
+      await api.upsertBoss(slug, password, {
+        id: b.boss_id,
+        seqLabel: b.seq_label,
+        name: b.name,
+        sortOrder: b.sort_order,
+        isActive: b.is_active,
+        notifyEnabled: !b.notify_enabled,
         nextSpawnAt: b.next_spawn_at,
         respawnIntervalMin: b.respawn_interval_min,
       })
@@ -215,6 +237,7 @@ export function BossTimerPage() {
         name: '새 보스',
         sortOrder: bosses.length,
         isActive: true,
+        notifyEnabled: true,
         nextSpawnAt: new Date(now + 60 * 60000).toISOString(),
         respawnIntervalMin: 60,
       })
@@ -339,6 +362,7 @@ export function BossTimerPage() {
         <thead>
           <tr>
             <th>상태</th>
+            <th>알림</th>
             <th>이름</th>
             <th>남은 시간</th>
             <th>등장 시간</th>
@@ -358,6 +382,15 @@ export function BossTimerPage() {
                     title="클릭해서 켜기/끄기"
                   >
                     {b.is_active ? 'O' : 'X'}
+                  </button>
+                </td>
+                <td>
+                  <button
+                    className={`notify-toggle ${b.notify_enabled ? 'on' : 'off'}`}
+                    onClick={() => handleToggleNotify(b)}
+                    title="카카오톡 알림 켜기/끄기"
+                  >
+                    {b.notify_enabled ? '🔔 ON' : '🔕 OFF'}
                   </button>
                 </td>
                 <td>
@@ -414,7 +447,8 @@ export function BossTimerPage() {
 
       <p className="muted boss-timer-footer">
         카카오톡 봇 연동: 봇이 <code>boss_timer_due_alerts(slug, poll_token)</code> RPC 를 1분마다 폴링하면
-        등장 5분 전인 보스 목록을 받아갈 수 있습니다(가져가면 자동으로 중복 발송 방지 표시됨).
+        <strong>🔔 알림이 켜진</strong> 보스 중 등장 5분 전인 것만 받아갑니다(가져가면 자동으로 중복 발송 방지 표시됨).
+        🔕 꺼진 보스는 화면에는 계속 보이지만 봇에게는 넘어가지 않습니다.
       </p>
     </div>
   )

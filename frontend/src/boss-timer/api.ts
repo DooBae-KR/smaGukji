@@ -12,6 +12,7 @@ export interface BossTimerRow {
   name: string
   sort_order: number
   is_active: boolean
+  notify_enabled: boolean
   next_spawn_at: string
   respawn_interval_min: number
 }
@@ -47,7 +48,7 @@ export async function verifyPassword(slug: string, password: string): Promise<bo
 export async function loadRoom(slug: string): Promise<BossTimerRoomView> {
   const rows = unwrap<
     { notice: string; boss_id: string | null; seq_label: string; name: string; sort_order: number
-      is_active: boolean; next_spawn_at: string; respawn_interval_min: number }[]
+      is_active: boolean; notify_enabled: boolean; next_spawn_at: string; respawn_interval_min: number }[]
   >(await supabase.rpc('boss_timer_room_view', { p_slug: slug }))
 
   const notice = rows[0]?.notice ?? ''
@@ -59,6 +60,7 @@ export async function loadRoom(slug: string): Promise<BossTimerRoomView> {
       name: r.name,
       sort_order: r.sort_order,
       is_active: r.is_active,
+      notify_enabled: r.notify_enabled,
       next_spawn_at: r.next_spawn_at,
       respawn_interval_min: r.respawn_interval_min,
     }))
@@ -91,6 +93,7 @@ export interface BossTimerInput {
   name: string
   sortOrder: number
   isActive: boolean
+  notifyEnabled: boolean
   nextSpawnAt: string
   respawnIntervalMin: number
 }
@@ -107,6 +110,7 @@ export async function upsertBoss(slug: string, password: string, input: BossTime
       p_is_active: input.isActive,
       p_next_spawn_at: input.nextSpawnAt,
       p_respawn_interval_min: input.respawnIntervalMin,
+      p_notify_enabled: input.notifyEnabled,
     }),
   )
 }

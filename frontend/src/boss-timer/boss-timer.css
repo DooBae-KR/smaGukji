@@ -57,6 +57,24 @@
   background: #e0625f;
 }
 
+.notify-toggle {
+  border-radius: 999px;
+  padding: 4px 10px;
+  border: none;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.notify-toggle.on {
+  background: #2f9e5b;
+  color: #fff;
+}
+
+.notify-toggle.off {
+  background: #ccc;
+  color: #555;
+}
+
 .remaining {
   display: inline-block;
   min-width: 90px;
