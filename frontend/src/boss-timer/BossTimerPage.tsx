@@ -558,7 +558,6 @@ export function BossTimerPage() {
               <col className="col-status" />
               <col className="col-notify" />
               <col className="col-name" />
-              <col className="col-schedule" />
               <col className="col-remaining" />
               <col className="col-spawn-at" />
               <col className="col-delete" />
@@ -568,7 +567,6 @@ export function BossTimerPage() {
                 <th>상태</th>
                 <th>알림</th>
                 <th>보스 이름</th>
-                <th>방식</th>
                 <th>남은 시간</th>
                 <th>등장 시간</th>
                 <th></th>
@@ -580,7 +578,7 @@ export function BossTimerPage() {
                 const scheduling = openSchedule === b.boss_id
                 return (
                   <tr key={b.boss_id} className={b.is_active ? '' : 'row-inactive'}>
-                    <td className="nowrap">
+                    <td className="nowrap" data-label="상태">
                       <button
                         className={`status-dot ${b.is_active ? 'on' : 'off'}`}
                         onClick={() => handleToggleActive(b)}
@@ -589,7 +587,7 @@ export function BossTimerPage() {
                         {b.is_active ? 'O' : 'X'}
                       </button>
                     </td>
-                    <td className="nowrap">
+                    <td className="nowrap" data-label="알림">
                       <button
                         className={`notify-toggle ${b.notify_enabled ? 'on' : 'off'}`}
                         onClick={() => handleToggleNotify(b)}
@@ -598,7 +596,7 @@ export function BossTimerPage() {
                         {b.notify_enabled ? '🔔' : '🔕'}
                       </button>
                     </td>
-                    <td>
+                    <td data-label="이름">
                       <div className="name-cell">
                         {b.seq_label && <span className="seq-label">{b.seq_label}</span>}
                         <input
@@ -613,17 +611,15 @@ export function BossTimerPage() {
                             저장
                           </button>
                         )}
+                        <button
+                          className="schedule-gear"
+                          onClick={() => setOpenSchedule(scheduling ? null : b.boss_id)}
+                          title={`등장 방식: ${scheduleLabel(b)} (클릭해서 수정)`}
+                        >
+                          ⚙
+                        </button>
                       </div>
                       {b.location && <div className="sub-info">{b.location}{b.level ? ` · Lv${b.level}` : ''}</div>}
-                    </td>
-                    <td>
-                      <button
-                        className="schedule-badge"
-                        onClick={() => setOpenSchedule(scheduling ? null : b.boss_id)}
-                        title="등장 방식 설정"
-                      >
-                        {scheduleLabel(b)} ✎
-                      </button>
                       {scheduling && (
                         <div className="schedule-editor">
                           <select
@@ -680,7 +676,7 @@ export function BossTimerPage() {
                         </div>
                       )}
                     </td>
-                    <td>
+                    <td data-label="남은 시간">
                       <div className="remaining-cell">
                         <span className={`remaining ${new Date(b.next_spawn_at).getTime() - now <= 5 * 60000 ? 'soon' : ''}`}>
                           {formatRemaining(b.next_spawn_at, now)}
@@ -717,8 +713,8 @@ export function BossTimerPage() {
                         )}
                       </div>
                     </td>
-                    <td className="spawn-at nowrap">{formatSpawnAt(b.next_spawn_at)}</td>
-                    <td className="nowrap">
+                    <td className="spawn-at nowrap" data-label="등장 시간">{formatSpawnAt(b.next_spawn_at)}</td>
+                    <td className="nowrap" data-label="">
                       <button className="danger ghost" onClick={() => handleDelete(b)} title="삭제">✕</button>
                     </td>
                   </tr>
@@ -726,7 +722,7 @@ export function BossTimerPage() {
               })}
               {sortedBosses.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="empty-row">아직 등록된 보스가 없습니다. "+ 보스 추가" 로 시작하세요.</td>
+                  <td colSpan={6} className="empty-row">아직 등록된 보스가 없습니다. "+ 보스 추가" 로 시작하세요.</td>
                 </tr>
               )}
             </tbody>
