@@ -600,7 +600,6 @@ export function BossTimerPage() {
                           ⚙
                         </button>
                       </div>
-                      {b.location && <div className="sub-info">{b.location}</div>}
                       {scheduling && (
                         <div className="schedule-editor">
                           <select
