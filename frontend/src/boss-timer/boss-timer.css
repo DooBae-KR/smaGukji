@@ -1,14 +1,101 @@
+:root {
+  --bt-bg: #f4f5f9;
+  --bt-card: #ffffff;
+  --bt-border: #e4e6ef;
+  --bt-text: #1f2430;
+  --bt-muted: #767c8f;
+  --bt-accent: #5b6bf7;
+  --bt-accent-dim: #eef0ff;
+  --bt-danger: #e5484d;
+  --bt-ok: #2f9e5b;
+  --bt-off: #cfd2dd;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bt-bg: #14161f;
+    --bt-card: #1b1e29;
+    --bt-border: #2b2f3d;
+    --bt-text: #e7e9f2;
+    --bt-muted: #9199ad;
+    --bt-accent: #7c8bff;
+    --bt-accent-dim: #262a45;
+    --bt-danger: #ff6b6f;
+    --bt-ok: #43c17c;
+    --bt-off: #3a3f4f;
+  }
+}
+
 .boss-timer-app {
-  max-width: 1200px;
+  max-width: 1180px;
   margin: 0 auto;
+  padding: 20px 16px 40px;
+  color: var(--bt-text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Pretendard, Roboto, sans-serif;
+}
+
+.boss-timer-app * {
+  box-sizing: border-box;
+}
+
+.boss-timer-loading {
+  padding: 40px;
+  text-align: center;
+  color: var(--bt-muted);
+}
+
+.boss-timer-header {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.boss-timer-header h1 {
+  font-size: 22px;
+  margin: 0;
+}
+
+.boss-timer-room-name {
+  color: var(--bt-muted);
+  font-size: 13px;
+}
+
+.boss-timer-card {
+  background: var(--bt-card);
+  border: 1px solid var(--bt-border);
+  border-radius: 14px;
   padding: 16px;
+  margin-bottom: 14px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+.boss-timer-setup {
+  max-width: 420px;
+  margin: 60px auto;
+}
+
+.boss-timer-setup h1 {
+  margin-top: 0;
+  font-size: 24px;
+}
+
+.boss-timer-card-title {
+  font-weight: 600;
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+
+.boss-timer-card-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 8px;
 }
 
 .boss-timer-toolbar {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin: 8px 0;
   flex-wrap: wrap;
 }
 
@@ -16,84 +103,258 @@
   flex: 1;
 }
 
-.boss-timer-notice {
-  width: 100%;
-  box-sizing: border-box;
+.sort-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--bt-muted);
+  font-size: 13px;
+}
+
+.boss-timer-app input,
+.boss-timer-app select,
+.boss-timer-app textarea {
+  background: var(--bt-bg);
+  border: 1px solid var(--bt-border);
+  border-radius: 8px;
+  padding: 7px 10px;
+  color: var(--bt-text);
+  font-size: 13px;
   font-family: inherit;
 }
 
-.boss-timer-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 8px;
+.boss-timer-app input:focus,
+.boss-timer-app select:focus,
+.boss-timer-app textarea:focus {
+  outline: none;
+  border-color: var(--bt-accent);
 }
 
-.boss-timer-table th,
-.boss-timer-table td {
-  border-bottom: 1px solid #ddd;
-  padding: 6px 8px;
-  text-align: left;
-  white-space: nowrap;
-}
-
-.boss-timer-table input[type='number'] {
-  width: 48px;
-}
-
-.status-dot {
-  border-radius: 999px;
-  width: 28px;
-  height: 28px;
-  border: none;
-  color: #fff;
+.boss-timer-app button {
+  background: var(--bt-bg);
+  border: 1px solid var(--bt-border);
+  border-radius: 8px;
+  padding: 7px 12px;
+  color: var(--bt-text);
+  font-size: 13px;
   cursor: pointer;
+  transition: filter 0.1s ease;
 }
 
-.status-dot.on {
-  background: #4f6bed;
+.boss-timer-app button:hover {
+  filter: brightness(0.96);
 }
 
-.status-dot.off {
-  background: #e0625f;
-}
-
-.notify-toggle {
-  border-radius: 999px;
-  padding: 4px 10px;
-  border: none;
-  cursor: pointer;
-  font-size: 12px;
-}
-
-.notify-toggle.on {
-  background: #2f9e5b;
+.boss-timer-app button.primary {
+  background: var(--bt-accent);
+  border-color: var(--bt-accent);
   color: #fff;
-}
-
-.notify-toggle.off {
-  background: #ccc;
-  color: #555;
-}
-
-.remaining {
-  display: inline-block;
-  min-width: 90px;
   font-weight: 600;
 }
 
-button.danger {
-  background: #e0625f;
+.boss-timer-app button.ok {
+  background: var(--bt-ok);
+  border-color: var(--bt-ok);
   color: #fff;
+}
+
+.boss-timer-app button.danger {
+  background: var(--bt-danger);
+  border-color: var(--bt-danger);
+  color: #fff;
+}
+
+.boss-timer-app button.danger.ghost {
+  background: transparent;
+  border-color: transparent;
+  color: var(--bt-danger);
+  padding: 4px 8px;
+}
+
+.boss-timer-notice {
+  width: 100%;
+  resize: vertical;
+}
+
+.error-box {
+  background: color-mix(in srgb, var(--bt-danger) 12%, transparent);
+  border: 1px solid var(--bt-danger);
+  color: var(--bt-danger);
+  border-radius: 10px;
+  padding: 10px 14px;
+  margin-bottom: 14px;
+  font-size: 13px;
 }
 
 .boss-timer-panel {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  max-width: 360px;
+}
+
+.boss-timer-panel label {
+  font-size: 12px;
+  color: var(--bt-muted);
+  margin-top: 4px;
+}
+
+.boss-timer-table-wrap {
+  overflow-x: auto;
+  margin-top: 12px;
+}
+
+.boss-timer-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 900px;
+}
+
+.boss-timer-table th {
+  text-align: left;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--bt-muted);
+  padding: 8px 10px;
+  border-bottom: 2px solid var(--bt-border);
+  white-space: nowrap;
+}
+
+.boss-timer-table td {
+  padding: 10px;
+  border-bottom: 1px solid var(--bt-border);
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.boss-timer-table tbody tr:hover {
+  background: color-mix(in srgb, var(--bt-accent) 5%, transparent);
+}
+
+.boss-timer-table tr.row-inactive {
+  opacity: 0.5;
+}
+
+.empty-row {
+  text-align: center;
+  color: var(--bt-muted);
+  padding: 24px !important;
+  white-space: normal !important;
+}
+
+.status-dot {
+  border-radius: 999px;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: none;
+  color: #fff;
+  font-weight: 700;
+  font-size: 12px;
+}
+
+.status-dot.on {
+  background: var(--bt-accent);
+}
+
+.status-dot.off {
+  background: var(--bt-off);
+  color: var(--bt-muted);
+}
+
+.notify-toggle {
+  border-radius: 999px;
+  width: 34px;
+  height: 30px;
+  padding: 0;
+  font-size: 15px;
+  border: none;
+}
+
+.notify-toggle.on {
+  background: color-mix(in srgb, var(--bt-ok) 18%, transparent);
+}
+
+.notify-toggle.off {
+  background: var(--bt-off);
+  opacity: 0.6;
+}
+
+.name-cell {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.seq-label {
+  color: var(--bt-muted);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.name-input {
+  font-weight: 600;
+  min-width: 120px;
+}
+
+.save-name {
+  padding: 4px 8px;
+  font-size: 12px;
+  background: var(--bt-accent);
+  border-color: var(--bt-accent);
+  color: #fff;
+}
+
+.remaining-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.remaining {
+  display: inline-block;
+  min-width: 84px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.remaining.soon {
+  color: var(--bt-danger);
+}
+
+.remaining-inputs {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.remaining-inputs input {
+  width: 46px;
+}
+
+.interval-cell {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--bt-muted);
+}
+
+.interval-cell input {
+  width: 40px;
+}
+
+.spawn-at {
+  color: var(--bt-muted);
+  font-variant-numeric: tabular-nums;
 }
 
 .boss-timer-footer {
-  margin-top: 16px;
+  margin-top: 8px;
   font-size: 12px;
+  color: var(--bt-muted);
+  line-height: 1.6;
+}
+
+.muted {
+  color: var(--bt-muted);
 }
