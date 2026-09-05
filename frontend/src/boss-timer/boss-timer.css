@@ -206,8 +206,17 @@
 .boss-timer-table {
   width: 100%;
   border-collapse: collapse;
-  min-width: 900px;
+  min-width: 1040px;
+  table-layout: fixed;
 }
+
+.boss-timer-table col.col-status { width: 52px; }
+.boss-timer-table col.col-notify { width: 48px; }
+.boss-timer-table col.col-name { width: 230px; }
+.boss-timer-table col.col-schedule { width: 220px; }
+.boss-timer-table col.col-remaining { width: 330px; }
+.boss-timer-table col.col-spawn-at { width: 90px; }
+.boss-timer-table col.col-delete { width: 40px; }
 
 .boss-timer-table th {
   text-align: left;
@@ -223,6 +232,11 @@
   padding: 10px;
   border-bottom: 1px solid var(--bt-border);
   vertical-align: middle;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.boss-timer-table td.nowrap {
   white-space: nowrap;
 }
 
@@ -283,17 +297,21 @@
   display: flex;
   align-items: center;
   gap: 6px;
+  flex-wrap: wrap;
 }
 
 .seq-label {
   color: var(--bt-muted);
   font-size: 12px;
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 .name-input {
   font-weight: 600;
-  min-width: 120px;
+  width: 100%;
+  min-width: 130px;
+  flex: 1 1 130px;
 }
 
 .save-name {
@@ -306,8 +324,9 @@
 
 .remaining-cell {
   display: flex;
-  align-items: center;
-  gap: 10px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
 }
 
 .remaining {
@@ -315,6 +334,7 @@
   min-width: 84px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 .remaining.soon {
@@ -325,10 +345,12 @@
   display: flex;
   align-items: center;
   gap: 4px;
+  flex-wrap: wrap;
 }
 
 .remaining-inputs input {
-  width: 46px;
+  width: 44px;
+  flex-shrink: 0;
 }
 
 .interval-cell {
@@ -352,6 +374,8 @@
   font-size: 11px;
   color: var(--bt-muted);
   margin-top: 2px;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .schedule-badge {
@@ -361,7 +385,9 @@
   padding: 4px 10px;
   font-size: 12px;
   color: var(--bt-text);
-  white-space: nowrap;
+  white-space: normal;
+  text-align: left;
+  line-height: 1.4;
 }
 
 .schedule-editor {
