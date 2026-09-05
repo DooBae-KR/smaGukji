@@ -19,7 +19,7 @@
 - frontend: React 19 / TypeScript / Vite 8. 라우터 없음(`App.tsx` 의 route 문자열 + `menu_item` 테이블). 읽기·저장은 supabase-js 직접(RLS). 백엔드는 «버튼 눌러서 하는 일» 만: 시트 동기화(`/api/sheets/sync`), CSV import, 인사 xlsx 업로드(Apache POI), 자산 카운트.
 - 편성 분석(`lib/analyze.ts`)·덱 추천(`lib/recommend.ts`)·전법 계수 파싱(`lib/effect.ts`)·티어덱(`lib/tier.ts` + `generated/tier-decks.json`)·전보 OCR(`lib/ocr.ts`, `lib/readReport.ts`, tesseract.js) 은 **전부 브라우저에서 돈다.** 서버가 잠들어도 화면이 죽지 않게 하기 위해서다.
 - DB: Supabase Postgres (project ref `yzjbaenqfnyqfoaxqegu`, ap-south-1). 반드시 session pooler 5432. 마이그레이션 현재 최고 번호: **V27 = battle_report(전보)** (미커밋, 로컬). 다음 번호는 V28 부터.
-- 배포: Netlify(프론트, https://samgukji.netlify.app — `www.` 없이) + Supabase + 백엔드는 현재 Render(https://smagukji.onrender.com, 잠듦). 이전 대상은 `deploy/README.md` 의 결정대로 **Oracle Always Free(A안, `deploy/oracle/`) → 막히면 Northflank(B안)**. Cowork 플랜이 제안했던 Koyeb Free 는 «도메인·카드 없이 5분 안에 끝나는 C안» 으로만 남겨 둔다. 무료 티어만 쓴다.
+- 배포: Netlify(프론트, https://samgukji.netlify.app — `www.` 없이) + Supabase. **Render 는 더 이상 쓰지 않는다(2026-09-04 삭제).** 시트 동기화·CSV import·인사 xlsx 업로드·자산 카운트처럼 백엔드가 하던 «버튼 눌러서 하는 일» 은 Netlify Functions 로 옮겼다. `backend/` 의 Spring Boot 코드와 Flyway 마이그레이션은 그대로 남아 있고(스키마는 여전히 Flyway 가 소유), 필요하면 `DEPLOY.md` 의 Fly.io/Docker/JAR 방법으로 별도 호스팅할 수 있지만 지금은 어디에도 상시 배포돼 있지 않다. 무료 티어만 쓴다.
 - CI: `.github/workflows/build.yml` (main 푸시 시 테스트 → 프론트 빌드 → Docker → GHCR `ghcr.io/doobae-kr/smagukji:latest`). Dockerfile 스테이지 이름을 바꾸면 이 파일의 `--target` 도 같이 바꾼다(2026-08-25: `backend` → `backend-api`).
 
 ## 데이터 출처 (구글 시트 `1UOtQR7PvI5qJwLeFbq-RErRRKBwl-JjXhsK53JXLzAA`)
@@ -55,7 +55,7 @@
 18. 전법 효과·전보 판독처럼 «추정» 이 섞이는 값은 확신도나 «표본 수» 를 반드시 같이 보여준다. 5전 미만 승률을 추천 근거로 쓰지 않는다.
 19. Notion 댓글에 붙은 이미지는 Claude 가 읽지 못한다. 스크린샷은 채팅으로 받는다.
 20. 프론트 새 화면은 `App.tsx` 의 route 추가만으로 열리지 않는다. `menu_item` 행(마이그레이션)이 없으면 첫 메뉴로 튕긴다(`/report` 가 그 상태).
-21. `render-deploy.sh` 는 로컬 `.env` 의 값을 **통째로** Render 환경변수에 덮어쓴다. `CORS_ALLOWED_ORIGINS` 에 `https://samgukji.netlify.app` 이 없으면 Netlify 화면의 백엔드 호출(인사 시트 업로드)이 전부 «Failed to fetch» 가 된다(2026-08-22 배포에서 발생, 08-25 수정·스크립트가 이제 막음). 백엔드 호스팅을 옮겨도 이 변수는 첫 번째로 확인한다.
+21. (지난 기록, Render 는 2026-09-04 삭제됨) `render-deploy.sh` 는 로컬 `.env` 의 값을 **통째로** Render 환경변수에 덮어썼다. `CORS_ALLOWED_ORIGINS` 에 프론트 주소가 없으면 백엔드 호출이 전부 «Failed to fetch» 가 됐다(2026-08-22 배포에서 발생). `backend/` 를 다시 어딘가에 올릴 일이 생기면 이 변수부터 확인한다.
 22. 인사 시트 숫자 칸은 «14만» 같은 축약 표기가 대부분이다. `MemberWeekImportService.parseNumber()` 가 만·억 단위를 읽는다. `BigDecimal` 직접 파싱으로 되돌리면 무훈이 조용히 null 이 된다.
 
 ## 테스트

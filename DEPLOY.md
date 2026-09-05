@@ -19,40 +19,11 @@
 
 ---
 
-## 방법 1 — Render (가장 간단, 무료 플랜 있음)
+> Render 는 더 이상 쓰지 않습니다(2026-09). 시트 동기화·CSV import·인사 xlsx 업로드 같은
+> «버튼 눌러서 하는 일» 은 Netlify Functions 로 옮겼습니다. 아래는 그와 별개로, 이 저장소의
+> Spring Boot 백엔드(Flyway 마이그레이션 등)를 직접 호스팅하고 싶을 때를 위한 방법입니다.
 
-### 1-A. 스크립트로 (브라우저 없이)
-
-저장소가 public 이라 GitHub App 연동 없이 API 만으로 배포됩니다.
-
-```bash
-# 1) https://render.com 가입 (GitHub 계정으로 하면 빠름)
-# 2) Account Settings → API Keys → Create API Key
-# 3) .env 에 추가:  RENDER_API_KEY=rnd_xxxxxxxx
-./render-deploy.sh
-```
-
-서비스 생성, 환경변수 주입, 빌드 대기, 헬스체크까지 한 번에 처리합니다.
-이미 서비스가 있으면 환경변수를 갱신하고 재배포만 겁니다.
-
-### 1-B. 대시보드에서 직접
-
-1. https://render.com 가입 후 GitHub 저장소 연결
-2. **New → Blueprint** → 이 저장소 선택 → [render.yaml](render.yaml)을 자동으로 읽습니다
-3. **Environment** 탭에서 값 3개를 직접 입력 (`sync: false`로 표시된 항목)
-   ```
-   SUPABASE_DB_URL       jdbc:postgresql://aws-0-ap-south-1.pooler.supabase.com:5432/postgres?sslmode=require
-   SUPABASE_DB_USER      postgres.yzjbaenqfnyqfoaxqegu
-   SUPABASE_DB_PASSWORD  (Supabase DB 비밀번호)
-   ```
-4. **Deploy**
-
-배포되면 `https://smagukji.onrender.com` 형태의 주소가 나옵니다.
-
-> 무료 플랜은 15분간 요청이 없으면 잠들고, 다음 첫 요청이 30초 이상 걸립니다.
-> 상시 가동이 필요하면 유료 플랜으로 올리세요.
-
-## 방법 2 — Fly.io
+## 방법 1 — Fly.io
 
 ```bash
 # 1) CLI 설치 후 로그인
@@ -73,7 +44,7 @@ fly deploy
 
 설정은 [fly.toml](fly.toml)에 있습니다. `min_machines_running = 0`이라 안 쓸 때는 멈춰 비용이 들지 않습니다.
 
-## 방법 3 — Docker (로컬 / 직접 서버 / NAS / VPS)
+## 방법 2 — Docker (로컬 / 직접 서버 / NAS / VPS)
 
 가장 간단한 방법:
 
@@ -96,7 +67,7 @@ docker run -d --name smagukji -p 8080:8080 \
   smagukji
 ```
 
-## 방법 4 — JAR 직접 실행
+## 방법 3 — JAR 직접 실행
 
 ```bash
 cd backend
@@ -126,7 +97,7 @@ java -jar build/libs/backend-0.0.1-SNAPSHOT.jar
 | `GENERAL_SHEET_CSV_URL` | | | 무장 분류 시트(CSV export). «데이터» 탭 불러오기 버튼용 |
 | `ROSTER_SHEET_CSV_URL` | | | 장수·전법 이름 마스터 시트(CSV export) |
 
-> ⚠️ **비밀값을 `render.yaml` / `fly.toml` / `Dockerfile` 에 넣지 마세요.** 전부 커밋되는 파일입니다.
+> ⚠️ **비밀값을 `fly.toml` / `Dockerfile` 에 넣지 마세요.** 전부 커밋되는 파일입니다.
 > `.dockerignore` 가 `.env` 를 이미지에서 제외합니다.
 
 ---

@@ -50,7 +50,7 @@ cd backend && ./gradlew bootJar -PbuildFrontend
 SPRING_PROFILES_ACTIVE=prod java -jar build/libs/backend-0.0.1-SNAPSHOT.jar
 ```
 
-Render · Fly.io · Docker 설정과 공개 전 점검 목록은 **[DEPLOY.md](DEPLOY.md)** 를 보세요.
+Fly.io · Docker 설정과 공개 전 점검 목록은 **[DEPLOY.md](DEPLOY.md)** 를 보세요.
 
 ### Windows 주의사항
 
