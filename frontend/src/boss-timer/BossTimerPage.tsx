@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import * as api from './api'
 import type { BossTimerRow, SpawnType } from './api'
 import { BOSS_SHEET_CSV_URL, DEFAULT_BOSS_SEED, parseBossSheet } from './sheetImport'
+import { getSubscriptionState, subscribeToPush, unsubscribeFromPush } from './webPush'
 import './boss-timer.css'
 
 function getSlug(): string {
@@ -63,6 +64,7 @@ export function BossTimerPage() {
   const [openSchedule, setOpenSchedule] = useState<string | null>(null)
   const [importing, setImporting] = useState(false)
   const [importMsg, setImportMsg] = useState<string | null>(null)
+  const [pushState, setPushState] = useState<'unsupported' | 'denied' | 'subscribed' | 'unsubscribed' | 'loading'>('loading')
 
   // 방 만들기 화면용
   const [createPassword, setCreatePassword] = useState('')
@@ -72,6 +74,29 @@ export function BossTimerPage() {
     const t = setInterval(() => setNow(Date.now()), 1000)
     return () => clearInterval(t)
   }, [])
+
+  useEffect(() => {
+    getSubscriptionState().then(setPushState)
+  }, [])
+
+  const handleEnablePush = async () => {
+    try {
+      await subscribeToPush(slug)
+      setPushState('subscribed')
+      setError(null)
+    } catch (err) {
+      setError((err as Error).message)
+    }
+  }
+
+  const handleDisablePush = async () => {
+    try {
+      await unsubscribeFromPush()
+      setPushState('unsubscribed')
+    } catch (err) {
+      setError((err as Error).message)
+    }
+  }
 
   const reload = useCallback(async () => {
     try {
@@ -399,6 +424,15 @@ export function BossTimerPage() {
       <header className="boss-timer-header">
         <h1>⚡ 보스 타이머</h1>
         <span className="boss-timer-room-name">방: {slug}</span>
+        <div className="spacer" />
+        {pushState === 'subscribed' && (
+          <button className="ok" onClick={handleDisablePush}>🔔 폰 알림 켜짐</button>
+        )}
+        {pushState === 'unsubscribed' && (
+          <button className="primary" onClick={handleEnablePush}>🔔 이 폰으로 알림 받기</button>
+        )}
+        {pushState === 'denied' && <span className="muted">알림 권한이 거부돼 있습니다(브라우저 설정에서 허용 필요)</span>}
+        {pushState === 'unsupported' && <span className="muted">이 브라우저는 푸시 알림 미지원</span>}
       </header>
 
       <div className="boss-timer-card">

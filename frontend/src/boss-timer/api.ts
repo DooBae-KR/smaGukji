@@ -191,3 +191,23 @@ export async function shiftBoss(slug: string, password: string, bossId: string, 
 export async function deleteBoss(slug: string, password: string, bossId: string): Promise<void> {
   unwrap(await supabase.rpc('boss_timer_delete', { p_slug: slug, p_password: password, p_id: bossId }))
 }
+
+export async function pushSubscribe(
+  slug: string,
+  endpoint: string,
+  p256dh: string,
+  auth: string,
+): Promise<void> {
+  unwrap(
+    await supabase.rpc('boss_timer_push_subscribe', {
+      p_slug: slug,
+      p_endpoint: endpoint,
+      p_p256dh: p256dh,
+      p_auth: auth,
+    }),
+  )
+}
+
+export async function pushUnsubscribe(endpoint: string): Promise<void> {
+  unwrap(await supabase.rpc('boss_timer_push_unsubscribe', { p_endpoint: endpoint }))
+}
