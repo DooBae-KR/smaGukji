@@ -211,3 +211,15 @@ export async function pushSubscribe(
 export async function pushUnsubscribe(endpoint: string): Promise<void> {
   unwrap(await supabase.rpc('boss_timer_push_unsubscribe', { p_endpoint: endpoint }))
 }
+
+/** "내 폰만" 이 보스 알림을 끄거나 켠다. 방 전체 알림(notify_enabled)과는 별개. */
+export async function setPushMute(endpoint: string, bossId: string, muted: boolean): Promise<void> {
+  unwrap(
+    await supabase.rpc('boss_timer_push_set_mute', { p_endpoint: endpoint, p_boss_id: bossId, p_muted: muted }),
+  )
+}
+
+/** 이 기기가 개인적으로 꺼둔 보스 id 목록. */
+export async function getMyMutes(endpoint: string): Promise<string[]> {
+  return unwrap(await supabase.rpc('boss_timer_push_my_mutes', { p_endpoint: endpoint }))
+}
