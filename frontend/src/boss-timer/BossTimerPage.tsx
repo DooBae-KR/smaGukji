@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import * as api from './api'
 import type { BossTimerRow, SpawnType } from './api'
 import { BOSS_SHEET_CSV_URL, DEFAULT_BOSS_SEED, parseBossSheet } from './sheetImport'
-import { getSubscriptionState, subscribeToPush, unsubscribeFromPush } from './webPush'
+import { getMyEndpoint, getSubscriptionState, subscribeToPush, unsubscribeFromPush } from './webPush'
 import './boss-timer.css'
 
 /** 표준 DOM 타입에는 없는 크롬 전용 이벤트. */
@@ -88,6 +88,8 @@ export function BossTimerPage() {
   const [importing, setImporting] = useState(false)
   const [importMsg, setImportMsg] = useState<string | null>(null)
   const [pushState, setPushState] = useState<'unsupported' | 'denied' | 'subscribed' | 'unsubscribed' | 'loading'>('loading')
+  const [myEndpoint, setMyEndpoint] = useState<string | null>(null)
+  const [myMutes, setMyMutes] = useState<Set<string>>(new Set())
   const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null)
   const [showInstallHelp, setShowInstallHelp] = useState(false)
 
@@ -111,6 +113,35 @@ export function BossTimerPage() {
   useEffect(() => {
     getSubscriptionState().then(setPushState)
   }, [])
+
+  // 개인별 "이 보스만 알림 끄기" 상태. 이 기기가 구독 중일 때만 의미가 있다.
+  useEffect(() => {
+    if (pushState !== 'subscribed') return
+    getMyEndpoint().then((ep) => {
+      setMyEndpoint(ep)
+      if (!ep) return
+      api.getMyMutes(ep).then((ids) => setMyMutes(new Set(ids))).catch(() => {})
+    })
+  }, [pushState])
+
+  const handleTogglePersonalMute = async (b: BossTimerRow) => {
+    if (!myEndpoint) {
+      setError('먼저 상단의 "🔔 이 폰으로 알림 받기" 를 눌러주세요.')
+      return
+    }
+    const nowMuted = myMutes.has(b.boss_id)
+    try {
+      await api.setPushMute(myEndpoint, b.boss_id, !nowMuted)
+      setMyMutes((prev) => {
+        const next = new Set(prev)
+        if (nowMuted) next.delete(b.boss_id)
+        else next.add(b.boss_id)
+        return next
+      })
+    } catch (err) {
+      setError((err as Error).message)
+    }
+  }
 
   // 안드로이드 크롬은 "홈 화면에 추가"를 이 이벤트로 직접 띄울 수 있다. 아이폰 사파리는
   // 이 이벤트 자체가 없어서(플랫폼 제약) 대신 안내 문구로 대체한다.
@@ -519,17 +550,21 @@ export function BossTimerPage() {
             onChange={(e) => setPasswordInput(e.target.value)}
           />
           <button className={unlocked ? 'ok' : 'primary'} onClick={handleUnlock}>
-            {unlocked ? '✓ 확인됨' : '확인'}
+            {unlocked ? '✓ 확인됨(관리자)' : '확인'}
           </button>
-          <div className="spacer" />
-          <input
-            type="password"
-            placeholder="비밀번호 변경"
-            value={newPassword}
-            onChange={(e) => setNewPasswordInput(e.target.value)}
-          />
-          <button onClick={handleChangePassword}>비밀번호 저장</button>
-          <button className="danger" onClick={handleDestroy}>방 폭파</button>
+          {unlocked && (
+            <>
+              <div className="spacer" />
+              <input
+                type="password"
+                placeholder="비밀번호 변경"
+                value={newPassword}
+                onChange={(e) => setNewPasswordInput(e.target.value)}
+              />
+              <button onClick={handleChangePassword}>비밀번호 저장</button>
+              <button className="danger" onClick={handleDestroy}>방 폭파</button>
+            </>
+          )}
         </div>
       </div>
 
@@ -539,11 +574,14 @@ export function BossTimerPage() {
           className="boss-timer-notice"
           value={notice}
           onChange={(e) => setNoticeText(e.target.value)}
+          readOnly={!unlocked}
           rows={3}
         />
-        <div className="boss-timer-card-actions">
-          <button className="primary" onClick={handleSaveNotice}>공지 저장</button>
-        </div>
+        {unlocked && (
+          <div className="boss-timer-card-actions">
+            <button className="primary" onClick={handleSaveNotice}>공지 저장</button>
+          </div>
+        )}
       </div>
 
       {error && <div className="error-box">{error}</div>}
@@ -552,34 +590,75 @@ export function BossTimerPage() {
         <div className="boss-timer-toolbar">
           <span className="muted sort-label">켜진 보스 · 등장 임박 순</span>
           <div className="spacer" />
-          <button onClick={handleImportSheet} disabled={importing}>
-            {importing ? '불러오는 중…' : '📄 시트에서 불러오기'}
-          </button>
-          <button className="primary" onClick={handleAdd}>+ 보스 추가</button>
+          {unlocked && (
+            <>
+              <button onClick={handleImportSheet} disabled={importing}>
+                {importing ? '불러오는 중…' : '📄 시트에서 불러오기'}
+              </button>
+              <button className="primary" onClick={handleAdd}>+ 보스 추가</button>
+            </>
+          )}
           <button onClick={reload}>↻ 새로고침</button>
         </div>
-        {importMsg && <p className="muted import-msg">{importMsg}</p>}
+        {unlocked && importMsg && <p className="muted import-msg">{importMsg}</p>}
 
         <div className="boss-timer-table-wrap">
           <table className="boss-timer-table">
-            <colgroup>
-              <col className="col-status" />
-              <col className="col-name" />
-              <col className="col-remaining" />
-              <col className="col-spawn-at" />
-              <col className="col-delete" />
-            </colgroup>
+            {unlocked ? (
+              <colgroup>
+                <col className="col-status" />
+                <col className="col-name" />
+                <col className="col-remaining" />
+                <col className="col-spawn-at" />
+                <col className="col-delete" />
+              </colgroup>
+            ) : (
+              <colgroup>
+                <col className="col-name" />
+                <col className="col-notify" />
+              </colgroup>
+            )}
             <thead>
-              <tr>
-                <th>상태</th>
-                <th>보스 이름</th>
-                <th>남은 시간</th>
-                <th>등장 시간</th>
-                <th></th>
-              </tr>
+              {unlocked ? (
+                <tr>
+                  <th>상태</th>
+                  <th>보스 이름</th>
+                  <th>남은 시간</th>
+                  <th>등장 시간</th>
+                  <th></th>
+                </tr>
+              ) : (
+                <tr>
+                  <th>보스 이름</th>
+                  <th>알림</th>
+                </tr>
+              )}
             </thead>
             <tbody>
               {sortedBosses.map((b) => {
+                if (!unlocked) {
+                  const muted = myMutes.has(b.boss_id)
+                  return (
+                    <tr key={b.boss_id}>
+                      <td data-label="이름">
+                        <span className="name-text">
+                          {b.level != null && <span className="level-tag">Lv{b.level}</span>}
+                          {b.name}
+                        </span>
+                      </td>
+                      <td className="nowrap" data-label="알림">
+                        <button
+                          className={`notify-toggle ${muted ? 'off' : 'on'}`}
+                          onClick={() => handleTogglePersonalMute(b)}
+                          title="내 폰에서만 이 보스 알림 켜기/끄기"
+                        >
+                          {muted ? '🔕' : '🔔'}
+                        </button>
+                      </td>
+                    </tr>
+                  )
+                }
+
                 const e = editFor(b)
                 const scheduling = openSchedule === b.boss_id
                 return (
@@ -616,7 +695,7 @@ export function BossTimerPage() {
                         <button
                           className={`notify-toggle ${b.notify_enabled ? 'on' : 'off'}`}
                           onClick={() => handleToggleNotify(b)}
-                          title="카카오톡 알림 켜기/끄기"
+                          title="방 전체 알림 켜기/끄기(관리자)"
                         >
                           {b.notify_enabled ? '🔔' : '🔕'}
                         </button>
@@ -730,7 +809,7 @@ export function BossTimerPage() {
               })}
               {sortedBosses.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="empty-row">아직 등록된 보스가 없습니다. "+ 보스 추가" 로 시작하세요.</td>
+                  <td colSpan={unlocked ? 5 : 2} className="empty-row">아직 등록된 보스가 없습니다. "+ 보스 추가" 로 시작하세요.</td>
                 </tr>
               )}
             </tbody>

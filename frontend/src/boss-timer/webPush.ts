@@ -46,6 +46,14 @@ export async function subscribeToPush(slug: string): Promise<void> {
   await api.pushSubscribe(slug, json.endpoint, json.keys.p256dh, json.keys.auth)
 }
 
+/** 이 기기가 지금 구독 중인 endpoint. 개인별 알림 뮤트를 걸 때 "누구"를 식별하는 키다. */
+export async function getMyEndpoint(): Promise<string | null> {
+  if (!pushSupported()) return null
+  const reg = await navigator.serviceWorker.getRegistration()
+  const sub = await reg?.pushManager.getSubscription()
+  return sub?.endpoint ?? null
+}
+
 export async function unsubscribeFromPush(): Promise<void> {
   const reg = await navigator.serviceWorker.getRegistration()
   const sub = await reg?.pushManager.getSubscription()

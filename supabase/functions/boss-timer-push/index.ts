@@ -34,6 +34,11 @@ interface Subscription {
   auth: string
 }
 
+interface Mute {
+  subscription_id: string
+  boss_id: string
+}
+
 Deno.serve(async (req: Request) => {
   const token = req.headers.get('x-boss-token')
   if (!token) return new Response('unauthorized', { status: 401 })
@@ -69,11 +74,28 @@ Deno.serve(async (req: Request) => {
   }
   const subscriptions = (subs ?? []) as Subscription[]
 
+  const subIds = subscriptions.map((s) => s.id)
+  const mutedPairs = new Set<string>()
+  if (subIds.length > 0) {
+    const { data: mutes, error: muteErr } = await supabase
+      .from('boss_timer_push_mute')
+      .select('subscription_id, boss_id')
+      .in('subscription_id', subIds)
+    if (muteErr) {
+      return new Response(JSON.stringify({ error: muteErr.message }), { status: 500 })
+    }
+    for (const m of (mutes ?? []) as Mute[]) mutedPairs.add(`${m.subscription_id}:${m.boss_id}`)
+  }
+
   let sent = 0
   const staleIds: string[] = []
 
   for (const boss of dueBosses) {
-    const targets = subscriptions.filter((s) => s.room_id === boss.room_id)
+    // 방 전체 알림은 켜져 있지만(그래서 여기까지 왔지만), 이 보스를 개인적으로 꺼둔
+    // 기기는 건너뛴다 — "내 폰만 이 보스 알림 끄기".
+    const targets = subscriptions.filter(
+      (s) => s.room_id === boss.room_id && !mutedPairs.has(`${s.id}:${boss.boss_id}`),
+    )
     const payload = JSON.stringify({
       title: '⚡ 보스 등장 임박',
       body: `${boss.name} 이(가) 5분 후 등장합니다!`,
