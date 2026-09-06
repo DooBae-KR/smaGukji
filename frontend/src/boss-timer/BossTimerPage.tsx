@@ -105,7 +105,9 @@ export function BossTimerPage() {
   const goToRoom = (name: string) => {
     const trimmed = name.trim()
     if (!trimmed) return
-    window.location.href = `/boss-timer.html?room=${encodeURIComponent(trimmed)}`
+    const url = new URL(window.location.href)
+    url.searchParams.set('room', trimmed)
+    window.location.href = url.toString()
   }
 
   useEffect(() => {

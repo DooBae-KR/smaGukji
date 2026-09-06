@@ -28,7 +28,7 @@ export async function subscribeToPush(slug: string): Promise<void> {
   const permission = await Notification.requestPermission()
   if (permission !== 'granted') throw new Error('알림 권한이 거부되었습니다.')
 
-  const reg = await navigator.serviceWorker.register('/sw.js')
+  const reg = await navigator.serviceWorker.register('sw.js')
   await navigator.serviceWorker.ready
 
   let sub = await reg.pushManager.getSubscription()
