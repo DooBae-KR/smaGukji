@@ -10,7 +10,7 @@ self.addEventListener('push', (event) => {
   event.waitUntil(
     self.registration.showNotification(data.title, {
       body: data.body,
-      icon: '/favicon.svg',
+      icon: './favicon.svg',
       // 무음모드/방해금지는 OS가 결정해서 웹 알림이 뚫을 수 없다. 여기서 할 수 있는 건
       // 소리를 끄지 않고(silent:false), 진동을 주고(안드로이드), 사람이 직접 닫기 전까지
       // 계속 떠 있게(requireInteraction) 해서 최대한 알람처럼 느껴지게 하는 것까지다.
@@ -25,5 +25,5 @@ self.addEventListener('push', (event) => {
 
 self.addEventListener('notificationclick', (event) => {
   event.notification.close()
-  event.waitUntil(self.clients.openWindow('/boss-timer.html'))
+  event.waitUntil(self.clients.openWindow('./boss-timer.html'))
 })
