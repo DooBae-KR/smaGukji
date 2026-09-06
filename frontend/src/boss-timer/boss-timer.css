@@ -346,6 +346,18 @@
   flex-wrap: wrap;
 }
 
+.boss-timer-table col.col-simple {
+  width: auto;
+}
+
+.simple-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+}
+
 .seq-label {
   color: var(--bt-muted);
   font-size: 12px;
@@ -548,7 +560,7 @@
     width: 100%;
   }
 
-  .boss-timer-table td[data-label]:not([data-label=""])::before {
+  .boss-timer-table td[data-label]:not([data-label=""]):not([data-label='보스'])::before {
     content: attr(data-label);
     flex: 0 0 60px;
     font-size: 11px;

@@ -482,10 +482,12 @@ export function BossTimerPage() {
     }
   }
 
-  // 켜진(ON) 보스가 먼저, 그 안에서는 등장이 빠른 순.
+  // 레벨 낮은 순. 레벨이 같으면 등장이 빠른 순으로 정렬한다.
   const sortedBosses = useMemo(() => {
     return [...bosses].sort((a, b) => {
-      if (a.is_active !== b.is_active) return a.is_active ? -1 : 1
+      const levelA = a.level ?? Number.MAX_SAFE_INTEGER
+      const levelB = b.level ?? Number.MAX_SAFE_INTEGER
+      if (levelA !== levelB) return levelA - levelB
       return new Date(a.next_spawn_at).getTime() - new Date(b.next_spawn_at).getTime()
     })
   }, [bosses])
@@ -650,7 +652,7 @@ export function BossTimerPage() {
 
       <div className="boss-timer-card">
         <div className="boss-timer-toolbar">
-          <span className="muted sort-label">켜진 보스 · 등장 임박 순</span>
+          <span className="muted sort-label">레벨 낮은 순</span>
           <div className="spacer" />
           {unlocked && (
             <>
@@ -676,8 +678,7 @@ export function BossTimerPage() {
               </colgroup>
             ) : (
               <colgroup>
-                <col className="col-name" />
-                <col className="col-notify" />
+                <col className="col-simple" />
               </colgroup>
             )}
             <thead>
@@ -691,8 +692,7 @@ export function BossTimerPage() {
                 </tr>
               ) : (
                 <tr>
-                  <th>보스 이름</th>
-                  <th>알림</th>
+                  <th>레벨 · 보스 이름 · 알림</th>
                 </tr>
               )}
             </thead>
@@ -702,20 +702,20 @@ export function BossTimerPage() {
                   const muted = myMutes.has(b.boss_id)
                   return (
                     <tr key={b.boss_id}>
-                      <td data-label="이름">
-                        <span className="name-text">
-                          {b.level != null && <span className="level-tag">Lv{b.level}</span>}
-                          {b.name}
-                        </span>
-                      </td>
-                      <td className="nowrap" data-label="알림">
-                        <button
-                          className={`notify-toggle ${muted ? 'off' : 'on'}`}
-                          onClick={() => handleTogglePersonalMute(b)}
-                          title="내 폰에서만 이 보스 알림 켜기/끄기"
-                        >
-                          {muted ? '🔕' : '🔔'}
-                        </button>
+                      <td data-label="보스">
+                        <div className="simple-row">
+                          <span className="name-text">
+                            {b.level != null && <span className="level-tag">Lv{b.level}</span>}
+                            {b.name}
+                          </span>
+                          <button
+                            className={`notify-toggle ${muted ? 'off' : 'on'}`}
+                            onClick={() => handleTogglePersonalMute(b)}
+                            title="내 폰에서만 이 보스 알림 켜기/끄기"
+                          >
+                            {muted ? '🔕' : '🔔'}
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   )
@@ -871,7 +871,7 @@ export function BossTimerPage() {
               })}
               {sortedBosses.length === 0 && (
                 <tr>
-                  <td colSpan={unlocked ? 5 : 2} className="empty-row">아직 등록된 보스가 없습니다. "+ 보스 추가" 로 시작하세요.</td>
+                  <td colSpan={unlocked ? 5 : 1} className="empty-row">아직 등록된 보스가 없습니다. "+ 보스 추가" 로 시작하세요.</td>
                 </tr>
               )}
             </tbody>
