@@ -223,3 +223,17 @@ export async function setPushMute(endpoint: string, bossId: string, muted: boole
 export async function getMyMutes(endpoint: string): Promise<string[]> {
   return unwrap(await supabase.rpc('boss_timer_push_my_mutes', { p_endpoint: endpoint }))
 }
+
+/** "이 시간대에만 알림 받기" 설정. 0~24, start<=end 면 [start,end), start>end 면 자정을 넘는 구간. */
+export async function setPushHours(endpoint: string, start: number, end: number): Promise<void> {
+  unwrap(
+    await supabase.rpc('boss_timer_push_set_hours', { p_endpoint: endpoint, p_start: start, p_end: end }),
+  )
+}
+
+export async function getPushHours(endpoint: string): Promise<{ quiet_start: number; quiet_end: number } | null> {
+  const rows = unwrap<{ quiet_start: number; quiet_end: number }[]>(
+    await supabase.rpc('boss_timer_push_get_hours', { p_endpoint: endpoint }),
+  )
+  return rows[0] ?? null
+}

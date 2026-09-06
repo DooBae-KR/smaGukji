@@ -32,6 +32,18 @@ interface Subscription {
   endpoint: string
   p256dh: string
   auth: string
+  quiet_start: number
+  quiet_end: number
+}
+
+/** 지금(Asia/Seoul 기준) 이 구독의 허용 시간대 안인지. start<=end 면 [start,end), start>end 면 자정을 넘는 구간(예: 22~06). */
+function withinQuietHours(quietStart: number, quietEnd: number): boolean {
+  if (quietStart === 0 && quietEnd === 24) return true
+  const hour = Number(
+    new Intl.DateTimeFormat('en-US', { hour: 'numeric', hour12: false, timeZone: 'Asia/Seoul' }).format(new Date()),
+  ) % 24
+  if (quietStart <= quietEnd) return hour >= quietStart && hour < quietEnd
+  return hour >= quietStart || hour < quietEnd
 }
 
 interface Mute {
@@ -67,7 +79,7 @@ Deno.serve(async (req: Request) => {
   const roomIds = [...new Set(dueBosses.map((b) => b.room_id))]
   const { data: subs, error: subsErr } = await supabase
     .from('boss_timer_push_subscription')
-    .select('id, room_id, endpoint, p256dh, auth')
+    .select('id, room_id, endpoint, p256dh, auth, quiet_start, quiet_end')
     .in('room_id', roomIds)
   if (subsErr) {
     return new Response(JSON.stringify({ error: subsErr.message }), { status: 500 })
@@ -91,10 +103,13 @@ Deno.serve(async (req: Request) => {
   const staleIds: string[] = []
 
   for (const boss of dueBosses) {
-    // 방 전체 알림은 켜져 있지만(그래서 여기까지 왔지만), 이 보스를 개인적으로 꺼둔
-    // 기기는 건너뛴다 — "내 폰만 이 보스 알림 끄기".
+    // 방 전체 알림은 켜져 있지만(그래서 여기까지 왔지만), 이 보스를 개인적으로 꺼뒀거나
+    // 지금이 그 기기의 "알림 받는 시간대" 밖이면 건너뛴다.
     const targets = subscriptions.filter(
-      (s) => s.room_id === boss.room_id && !mutedPairs.has(`${s.id}:${boss.boss_id}`),
+      (s) =>
+        s.room_id === boss.room_id &&
+        !mutedPairs.has(`${s.id}:${boss.boss_id}`) &&
+        withinQuietHours(s.quiet_start, s.quiet_end),
     )
     const payload = JSON.stringify({
       title: '⚡ 보스 등장 임박',
