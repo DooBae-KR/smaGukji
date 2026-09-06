@@ -92,6 +92,9 @@ export function BossTimerPage() {
   const [myMutes, setMyMutes] = useState<Set<string>>(new Set())
   const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null)
   const [showInstallHelp, setShowInstallHelp] = useState(false)
+  const [showHoursEditor, setShowHoursEditor] = useState(false)
+  const [quietStart, setQuietStart] = useState('0')
+  const [quietEnd, setQuietEnd] = useState('24')
 
   // 방 만들기 화면용
   const [createPassword, setCreatePassword] = useState('')
@@ -114,15 +117,41 @@ export function BossTimerPage() {
     getSubscriptionState().then(setPushState)
   }, [])
 
-  // 개인별 "이 보스만 알림 끄기" 상태. 이 기기가 구독 중일 때만 의미가 있다.
+  // 개인별 "이 보스만 알림 끄기" · "이 시간대에만 알림" 상태. 구독 중일 때만 의미가 있다.
   useEffect(() => {
     if (pushState !== 'subscribed') return
     getMyEndpoint().then((ep) => {
       setMyEndpoint(ep)
       if (!ep) return
       api.getMyMutes(ep).then((ids) => setMyMutes(new Set(ids))).catch(() => {})
+      api.getPushHours(ep).then((h) => {
+        if (h) {
+          setQuietStart(String(h.quiet_start))
+          setQuietEnd(String(h.quiet_end))
+        }
+      }).catch(() => {})
     })
   }, [pushState])
+
+  const handleSaveQuietHours = async () => {
+    if (!myEndpoint) {
+      setError('먼저 상단의 "🔔 이 폰으로 알림 받기" 를 눌러주세요.')
+      return
+    }
+    const start = Number(quietStart)
+    const end = Number(quietEnd)
+    if (!Number.isInteger(start) || !Number.isInteger(end) || start < 0 || start > 24 || end < 0 || end > 24) {
+      setError('시간은 0~24 사이의 정수로 입력하세요.')
+      return
+    }
+    try {
+      await api.setPushHours(myEndpoint, start, end)
+      setShowHoursEditor(false)
+      setError(null)
+    } catch (err) {
+      setError((err as Error).message)
+    }
+  }
 
   const handleTogglePersonalMute = async (b: BossTimerRow) => {
     if (!myEndpoint) {
@@ -515,7 +544,10 @@ export function BossTimerPage() {
         </button>
         <div className="spacer" />
         {pushState === 'subscribed' && (
-          <button className="ok" onClick={handleDisablePush}>🔔 폰 알림 켜짐</button>
+          <>
+            <button className="ok" onClick={handleDisablePush}>🔔 폰 알림 켜짐</button>
+            <button onClick={() => setShowHoursEditor((v) => !v)}>🕐 알림 시간대</button>
+          </>
         )}
         {pushState === 'unsubscribed' && (
           <button className="primary" onClick={handleEnablePush}>🔔 이 폰으로 알림 받기</button>
@@ -538,6 +570,36 @@ export function BossTimerPage() {
           </p>
           <p><b>안드로이드(크롬)</b>: 오른쪽 위 점 3개 메뉴 → "홈 화면에 추가" 또는 "앱 설치".</p>
           <button onClick={() => setShowInstallHelp(false)}>닫기</button>
+        </div>
+      )}
+
+      {showHoursEditor && (
+        <div className="boss-timer-card install-help">
+          <b>이 시간대에만 알림 받기 (내 폰만)</b>
+          <p className="muted">
+            예: 06 ~ 24 로 두면 새벽 0시~6시에는 보스가 등장해도 알림이 안 옵니다. 0 ~ 24 는 "제한 없음"입니다.
+            시작이 종료보다 크면(예: 22 ~ 06) 자정을 넘는 구간으로 처리됩니다.
+          </p>
+          <div className="join-row">
+            <input
+              type="number"
+              min={0}
+              max={24}
+              value={quietStart}
+              onChange={(e) => setQuietStart(e.target.value)}
+            />
+            <span>시 ~</span>
+            <input
+              type="number"
+              min={0}
+              max={24}
+              value={quietEnd}
+              onChange={(e) => setQuietEnd(e.target.value)}
+            />
+            <span>시</span>
+            <button className="primary" onClick={handleSaveQuietHours}>저장</button>
+            <button onClick={() => setShowHoursEditor(false)}>닫기</button>
+          </div>
         </div>
       )}
 
