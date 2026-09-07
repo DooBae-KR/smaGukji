@@ -101,8 +101,9 @@ export function BossTimerPage() {
 
   // 이 화면을 켜놓고 보고 있을 때, 등장 시각이 되면 직접 끄기 전까지 진동+소리를 반복한다.
   // (푸시 알림의 vibrate 패턴은 한 번만 울리고 끝나서 "끄기 전까지 계속" 은 안 됨 — 이건
-  // 탭이 열려 있을 때만 동작하는 별도의 보조 알람이다.)
-  const [ringingBoss, setRingingBoss] = useState<BossTimerRow | null>(null)
+  // 탭이 열려 있을 때만 동작하는 별도의 보조 알람이다.) 여러 보스가 겹쳐서 동시에 등장하면
+  // 알람도 여러 개 겹치는데, 이때 "알람 끄기" 한 번으로 겹친 것 전부를 한꺼번에 끈다.
+  const [ringingBosses, setRingingBosses] = useState<BossTimerRow[]>([])
   const alarmIntervalRef = useRef<number | null>(null)
   const alarmAudioCtxRef = useRef<AudioContext | null>(null)
   const dismissedSpawnRef = useRef<Record<string, string>>({})
@@ -121,24 +122,29 @@ export function BossTimerPage() {
     } catch {
       // 진동 미지원 기기는 무시
     }
-    setRingingBoss((current) => {
-      if (current) dismissedSpawnRef.current[current.boss_id] = current.next_spawn_at
-      return null
+    setRingingBosses((current) => {
+      for (const b of current) dismissedSpawnRef.current[b.boss_id] = b.next_spawn_at
+      return []
     })
   }, [])
 
   useEffect(() => {
-    if (ringingBoss) return // 이미 하나 울리는 중이면 새로 트리거하지 않는다.
-    const due = bosses.find(
+    const due = bosses.filter(
       (b) =>
         b.notify_enabled &&
         !myMutes.has(b.boss_id) &&
         new Date(b.next_spawn_at).getTime() <= now &&
         dismissedSpawnRef.current[b.boss_id] !== b.next_spawn_at,
     )
-    if (!due) return
+    if (due.length === 0) return
 
-    setRingingBoss(due)
+    setRingingBosses((current) => {
+      const known = new Set(current.map((b) => b.boss_id))
+      const additions = due.filter((b) => !known.has(b.boss_id))
+      return additions.length === 0 ? current : [...current, ...additions]
+    })
+
+    if (alarmIntervalRef.current !== null) return // 이미 울리는 중이면 인터벌만 계속 쓴다.
     const AudioCtx = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
     const beep = () => {
       try {
@@ -164,7 +170,7 @@ export function BossTimerPage() {
     beep()
     alarmIntervalRef.current = window.setInterval(beep, 1200)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [now, bosses, myMutes, ringingBoss])
+  }, [now, bosses, myMutes])
 
   useEffect(() => stopAlarm, [stopAlarm])
 
@@ -652,10 +658,10 @@ export function BossTimerPage() {
 
   return (
     <div className="boss-timer-app">
-      {ringingBoss && (
+      {ringingBosses.length > 0 && (
         <div className="alarm-banner">
-          <span>🔔 {ringingBoss.name} 등장!</span>
-          <button onClick={stopAlarm}>알람 끄기</button>
+          <span>🔔 {ringingBosses.map((b) => b.name).join(', ')} 등장!</span>
+          <button onClick={stopAlarm}>알람 끄기{ringingBosses.length > 1 ? ` (${ringingBosses.length})` : ''}</button>
         </div>
       )}
       <header className="boss-timer-header">
