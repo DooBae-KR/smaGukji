@@ -28,7 +28,8 @@ Deno.serve(async (req: Request) => {
 
   const file = FILES[path]
   if (!file) {
-    return new Response('Not found', { status: 404 })
+    // 임시 디버그: 왜 못 찾는지 원인 파악용. pathname/path 를 그대로 보여준다.
+    return new Response(`Not found: pathname=${JSON.stringify(url.pathname)} path=${JSON.stringify(path)} keys=${JSON.stringify(Object.keys(FILES))}`, { status: 404 })
   }
 
   const gz = decodeBase64(file.gzipBase64)
