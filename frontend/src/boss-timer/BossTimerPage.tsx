@@ -42,7 +42,7 @@ function formatRemaining(nextSpawnAt: string, now: number): string {
   const days = Math.floor(total / 1440)
   const hours = Math.floor((total % 1440) / 60)
   const minutes = total % 60
-  return `${sign}${days}일 ${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`
+  return `${sign}${days}일 ${hours}시 ${minutes}분`
 }
 
 function formatSpawnAt(nextSpawnAt: string): string {
@@ -554,8 +554,12 @@ export function BossTimerPage() {
   }
 
   // 레벨 낮은 순. 레벨이 같으면 등장이 빠른 순으로 정렬한다.
+  // "심연의 틈"은 등장 시각이 항상 고정이라 정렬에 안 섞이게 맨 뒤로 뺀다.
   const sortedBosses = useMemo(() => {
     return [...bosses].sort((a, b) => {
+      const isFixedA = a.name === '심연의 틈'
+      const isFixedB = b.name === '심연의 틈'
+      if (isFixedA !== isFixedB) return isFixedA ? 1 : -1
       const levelA = a.level ?? Number.MAX_SAFE_INTEGER
       const levelB = b.level ?? Number.MAX_SAFE_INTEGER
       if (levelA !== levelB) return levelA - levelB
@@ -789,6 +793,9 @@ export function BossTimerPage() {
                           <span className="name-text">
                             {b.level != null && <span className="level-tag">Lv{b.level}</span>}
                             {b.name}
+                          </span>
+                          <span className={`remaining ${new Date(b.next_spawn_at).getTime() - now <= 5 * 60000 ? 'soon' : ''}`}>
+                            {formatRemaining(b.next_spawn_at, now)}
                           </span>
                           <button
                             className={`notify-toggle ${muted ? 'off' : 'on'}`}
