@@ -27,12 +27,25 @@ const outFile = path.join(__dirname, '..', 'supabase', 'functions', 'boss-timer-
 
 const FILES = JSON.parse(readFileSync(path.join(__dirname, 'boss-timer-app-files.json'), 'utf8'))
 
+// Edge Function URL 은 "/functions/v1/boss-timer-app" (끝에 슬래시 없이) 로 방문되는 경우가
+// 많은데, 그 상태에서 boss-timer.html 안의 "./assets/x.js" 같은 상대경로는 브라우저가
+// "/functions/v1/assets/x.js" 로 (boss-timer-app 을 파일명으로 취급해서 지워버리고) 잘못
+// 풀어버려 화면이 빈 채로 뜬다(2026-09-07). <base> 태그로 항상 이 함수 경로를 기준으로 고정한다.
+const BASE_HREF = '/functions/v1/boss-timer-app/'
+
 const entries = FILES.map(({ file, contentType }) => {
   const abs = path.join(distDir, file)
   if (!existsSync(abs)) {
     throw new Error(`빌드 결과에 없음: ${file} — dist-boss-timer/를 다시 빌드했는지, 파일명(해시)이 바뀌었는지 확인`)
   }
-  const gz = gzipSync(readFileSync(abs), { level: 9 })
+  let content = readFileSync(abs)
+  if (file === 'boss-timer.html') {
+    const html = content.toString('utf8').replace('<head>', `<head>\n    <base href="${BASE_HREF}" />`)
+    // 헤더/메타 태그의 charset 선언과 무관하게 브라우저가 무조건 UTF-8로 읽게 BOM을 붙인다.
+    // (Supabase 게이트웨이를 거치며 charset 선언이 씹혀서 한글이 깨지는 문제가 있었음, 2026-09-07)
+    content = Buffer.concat([Buffer.from([0xef, 0xbb, 0xbf]), Buffer.from(html, 'utf8')])
+  }
+  const gz = gzipSync(content, { level: 9 })
   return { file, contentType, base64: gz.toString('base64') }
 })
 
