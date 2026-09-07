@@ -1,0 +1,8 @@
+[
+  { "file": "boss-timer.html", "contentType": "text/html; charset=utf-8" },
+  { "file": "sw.js", "contentType": "application/javascript; charset=utf-8" },
+  { "file": "favicon.svg", "contentType": "image/svg+xml" },
+  { "file": "boss-timer-manifest.json", "contentType": "application/json; charset=utf-8" },
+  { "file": "assets/bossTimer-BhXnIsp2.js", "contentType": "application/javascript; charset=utf-8" },
+  { "file": "assets/bossTimer-DvQIvw6s.css", "contentType": "text/css; charset=utf-8" }
+]
