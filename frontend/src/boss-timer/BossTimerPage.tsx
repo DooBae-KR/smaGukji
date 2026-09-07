@@ -290,24 +290,32 @@ export function BossTimerPage() {
    * 걸어서 "다른 앱 위에 계속 뜨는 작은 창"처럼 우회한다. video/canvas 는 이미 마운트 시점에
    * 준비돼 있으므로 여기선 클릭 인정이 끊기지 않게 곧바로 요청만 한다.
    */
-  const startMobilePip = async () => {
+  const startMobilePip = () => {
     const video = mobilePipVideoRef.current
     if (!video) {
       setError('오버레이 준비 중입니다. 잠시 후 다시 눌러주세요.')
       return
     }
-    try {
-      await video.play()
-      await video.requestPictureInPicture()
-      video.addEventListener('leavepictureinpicture', () => stopMobilePip(), { once: true })
-      setMobilePipActive(true)
-    } catch (err) {
-      stopMobilePip()
-      setError(
-        `오버레이를 시작하지 못했습니다: ${(err as Error).message}` +
-          ' (아이폰은 크롬을 설치해도 내부적으로는 사파리와 같은 엔진을 씁니다 — 사파리에서도 안 되면 이 기기는 이 기능 자체를 지원하지 않는 것입니다)',
-      )
-    }
+    // 사파리(아이폰)는 클릭 핸들러 안에서 await 를 단 한 번이라도 거치면(설령 이미 끝난
+    // play() 를 기다리는 것이라도) "사용자 클릭으로 시작됨" 인정을 그 자리에서 끊어버린다.
+    // 그래서 requestPictureInPicture() 를 클릭 이벤트 콜스택 안에서 가장 먼저, 동기적으로
+    // 호출해야 한다 — video 는 이미 마운트 시점부터 재생 중이므로 play() 를 다시 기다릴
+    // 필요가 없다(혹시 자동재생이 막혀 멈춰 있었다면 아래에서 별도로, 기다리지 않고 재생만
+    // 재시도한다).
+    if (video.paused) video.play().catch(() => {})
+    video
+      .requestPictureInPicture()
+      .then(() => {
+        video.addEventListener('leavepictureinpicture', () => stopMobilePip(), { once: true })
+        setMobilePipActive(true)
+      })
+      .catch((err: Error) => {
+        stopMobilePip()
+        setError(
+          `오버레이를 시작하지 못했습니다: ${err.message}` +
+            ' (아이폰은 크롬을 설치해도 내부적으로는 사파리와 같은 엔진을 씁니다 — 사파리에서도 안 되면 이 기기는 이 기능 자체를 지원하지 않는 것입니다)',
+        )
+      })
   }
 
   /**
@@ -331,7 +339,7 @@ export function BossTimerPage() {
       }
     }
     if (document.pictureInPictureEnabled) {
-      await startMobilePip()
+      startMobilePip()
       return
     }
     const url = new URL(window.location.href)
