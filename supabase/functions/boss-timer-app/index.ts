@@ -44,11 +44,13 @@ Deno.serve(async (req: Request) => {
   ).arrayBuffer()
   const cacheControl = path === 'boss-timer.html' ? 'no-cache' : 'public, max-age=3600'
 
-  return new Response(decompressedBuffer, {
-    headers: {
-      'Content-Type': file.contentType,
-      'Content-Length': String(decompressedBuffer.byteLength),
-      'Cache-Control': cacheControl,
-    },
-  })
+  // 'Content-Type' 를 headers 객체 리터럴로 주면 Supabase 게이트웨이를 거치며 'text/plain'
+  // 으로 덮어써지는 문제가 있어서(2026-09-07), Blob 자체의 type 으로 지정해 표준 방식대로
+  // Content-Type 이 유도되게 하고, Headers 인스턴스에도 명시적으로 다시 얹는다.
+  const blob = new Blob([decompressedBuffer], { type: file.contentType })
+  const headers = new Headers()
+  headers.set('Content-Type', file.contentType)
+  headers.set('Cache-Control', cacheControl)
+
+  return new Response(blob, { headers })
 })
