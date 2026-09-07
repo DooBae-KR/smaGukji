@@ -1,9 +1,25 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import * as api from './api'
 import type { BossTimerRow, SpawnType } from './api'
 import { BOSS_SHEET_CSV_URL, DEFAULT_BOSS_SEED, parseBossSheet } from './sheetImport'
 import { getMyEndpoint, getSubscriptionState, subscribeToPush, unsubscribeFromPush } from './webPush'
+import { OverlayView } from './OverlayView'
 import './boss-timer.css'
+
+/** 데스크톱 크롬(116+)에만 있는 실험적 API. 게임 창 위에 계속 떠 있는 작은 창을 만든다. */
+interface DocumentPictureInPictureWindow extends EventTarget {
+  document: Document
+  close: () => void
+}
+interface DocumentPictureInPicture {
+  requestWindow: (options?: { width?: number; height?: number }) => Promise<DocumentPictureInPictureWindow>
+}
+declare global {
+  interface Window {
+    documentPictureInPicture?: DocumentPictureInPicture
+  }
+}
 
 /** 표준 DOM 타입에는 없는 크롬 전용 이벤트. */
 interface BeforeInstallPromptEvent extends Event {
@@ -75,6 +91,8 @@ interface RowEditState {
 
 export function BossTimerPage() {
   const slug = useMemo(getSlug, [])
+  const isOverlay = useMemo(() => new URLSearchParams(window.location.search).get('overlay') === '1', [])
+  const [pipWindow, setPipWindow] = useState<DocumentPictureInPictureWindow | null>(null)
   const [exists, setExists] = useState<boolean | null>(null)
   const [password, setPasswordInput] = useState('')
   const [unlocked, setUnlocked] = useState(false)
@@ -174,6 +192,11 @@ export function BossTimerPage() {
 
   useEffect(() => stopAlarm, [stopAlarm])
 
+  useEffect(() => {
+    if (!pipWindow) return
+    return () => pipWindow.close()
+  }, [pipWindow])
+
   // 방 만들기 화면용
   const [createPassword, setCreatePassword] = useState('')
   const [createPollToken, setCreatePollToken] = useState('')
@@ -186,6 +209,30 @@ export function BossTimerPage() {
     const url = new URL(window.location.href)
     url.searchParams.set('room', trimmed)
     window.location.href = url.toString()
+  }
+
+  /**
+   * "오버레이" 버튼: 데스크톱 크롬은 Document Picture-in-Picture로 게임 창 위에 계속
+   * 떠 있는 작은 창을 만든다(같은 화면 상태를 그대로 그 창에 그려 넣는다, 새로고침 없음).
+   * 그 외(안드로이드 등)는 지원 자체가 없어서, 같은 페이지를 &overlay=1 을 붙여 새
+   * 팝업 창으로 띄운다 — "항상 위" 는 아니고 사용자가 직접 배치해야 한다.
+   */
+  const handleOpenOverlay = async () => {
+    if (window.documentPictureInPicture) {
+      try {
+        const win = await window.documentPictureInPicture.requestWindow({ width: 260, height: 360 })
+        win.document.title = '보스 오버레이'
+        win.addEventListener('pagehide', () => setPipWindow(null))
+        setPipWindow(win)
+        return
+      } catch (err) {
+        setError((err as Error).message)
+        return
+      }
+    }
+    const url = new URL(window.location.href)
+    url.searchParams.set('overlay', '1')
+    window.open(url.toString(), 'boss-overlay', 'width=300,height=460')
   }
 
   useEffect(() => {
@@ -656,6 +703,13 @@ export function BossTimerPage() {
     )
   }
 
+  // 오버레이 창(팝업/PiP)은 별도 URL(...&overlay=1)로 자기 자신을 새로 열어서 쓴다.
+  // 안드로이드는 이 방식(팝업 창)으로, 데스크톱은 아래 "🪟 오버레이" 버튼이 여는
+  // Document Picture-in-Picture 창도 이 컴포넌트를 그대로 재사용한다.
+  if (isOverlay) {
+    return <OverlayView bosses={bosses} now={now} />
+  }
+
   return (
     <div className="boss-timer-app">
       {ringingBosses.length > 0 && (
@@ -688,7 +742,12 @@ export function BossTimerPage() {
         ) : (
           <button onClick={() => setShowInstallHelp((v) => !v)}>📲 홈 화면에 추가</button>
         )}
+        <button onClick={handleOpenOverlay} disabled={!!pipWindow} title="게임 위에 띄워두는 작은 알림 창 (데스크톱 크롬 전용, 그 외는 팝업 창)">
+          🪟 {pipWindow ? '오버레이 켜짐' : '오버레이'}
+        </button>
       </header>
+
+      {pipWindow && createPortal(<OverlayView bosses={bosses} now={now} />, pipWindow.document.body)}
 
       {showInstallHelp && !installPrompt && (
         <div className="boss-timer-card install-help">
