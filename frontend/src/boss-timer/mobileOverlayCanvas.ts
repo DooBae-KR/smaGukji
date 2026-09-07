@@ -32,8 +32,9 @@ export function drawOverlayFrame(canvas: HTMLCanvasElement, bosses: BossTimerRow
   ctx.font = 'bold 14px system-ui, sans-serif'
   ctx.fillText('⚡ 보스 오버레이', 10, 20)
 
+  const OVERLAY_WINDOW_MS = 30 * 60000
   const sorted = [...bosses]
-    .filter((b) => b.is_active && b.notify_enabled)
+    .filter((b) => b.is_active && b.notify_enabled && new Date(b.next_spawn_at).getTime() - now <= OVERLAY_WINDOW_MS)
     .sort((a, b) => new Date(a.next_spawn_at).getTime() - new Date(b.next_spawn_at).getTime())
 
   const rowHeight = 26
@@ -41,7 +42,7 @@ export function drawOverlayFrame(canvas: HTMLCanvasElement, bosses: BossTimerRow
   if (sorted.length === 0) {
     ctx.fillStyle = '#9a9caa'
     ctx.font = '13px system-ui, sans-serif'
-    ctx.fillText('알림 켜진 보스가 없습니다.', 10, y)
+    ctx.fillText('30분 이내 등장 보스 없음', 10, y)
     return
   }
 
