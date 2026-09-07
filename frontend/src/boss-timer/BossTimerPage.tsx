@@ -235,28 +235,22 @@ export function BossTimerPage() {
     if (document.pictureInPictureElement) {
       document.exitPictureInPicture().catch(() => {})
     }
-    const video = mobilePipVideoRef.current
-    if (video) {
-      const stream = video.srcObject as MediaStream | null
-      stream?.getTracks().forEach((t) => t.stop())
-      video.srcObject = null
-      video.remove()
-      mobilePipVideoRef.current = null
-    }
-    mobilePipCanvasRef.current = null
     setMobilePipActive(false)
   }, [])
 
   /**
-   * 안드로이드는 임의의 HTML 을 PiP로 못 띄우고 <video> 에 대한 PiP만 지원한다. 그래서
-   * 보스 목록을 캔버스에 그림으로 그려서 동영상 스트림으로 바꾼 뒤, 그 동영상에 PiP를
-   * 걸어서 "다른 앱 위에 계속 뜨는 작은 창"처럼 우회한다.
+   * 아이폰(사파리 엔진) 은 "사용자 클릭으로 시작됐다" 는 인정을 매우 엄격하게 본다 — 클릭
+   * 핸들러 안에서 loadedmetadata 같은 비동기 이벤트를 한 번이라도 기다리면 그 사이에 인정이
+   * 끊겨서 requestPictureInPicture() 가 "not triggered by a user activation" 으로 실패한다
+   * (2026-09-07 실측). 그래서 이 video/canvas 는 버튼을 누르기 훨씬 전, 화면이 뜨는 순간
+   * 미리 만들어서 항상 재생 중인 상태로 대기시켜 둔다. 그러면 클릭 시점엔 이미
+   * readyState 가 준비돼 있어서 requestPictureInPicture() 를 곧바로(await 없이 가깝게)
+   * 부를 수 있다.
    */
-  const startMobilePip = async () => {
+  useEffect(() => {
     const canvas = document.createElement('canvas')
     canvas.width = 220
     canvas.height = 240
-    drawOverlayFrame(canvas, bosses, now)
     mobilePipCanvasRef.current = canvas
 
     const video = document.createElement('video')
@@ -267,19 +261,42 @@ export function BossTimerPage() {
     Object.assign(video.style, { position: 'fixed', width: '2px', height: '2px', opacity: '0.01', pointerEvents: 'none', left: '0', top: '0' })
     document.body.appendChild(video)
     video.srcObject = canvas.captureStream(2)
+    video.play().catch(() => {
+      // 자동재생이 막힌 브라우저는 실제 "오버레이" 클릭 시점에 다시 play() 를 시도한다.
+    })
     mobilePipVideoRef.current = video
 
-    try {
-      // iOS(사파리/아이폰의 크롬도 내부는 똑같이 사파리 엔진) 는 video 의 크기 정보(메타데이터)가
-      // 준비되기 전에 PiP 를 요청하면 조용히 실패한다. loadedmetadata 를 기다렸다가 요청해야
-      // 사용자 클릭으로 시작된 동작으로 인정받는다(안드로이드 크롬은 이 순서 없이도 되지만
-      // 똑같이 해도 문제없다).
-      if (video.readyState < 1) {
-        await new Promise<void>((resolve, reject) => {
-          video.addEventListener('loadedmetadata', () => resolve(), { once: true })
-          video.addEventListener('error', () => reject(new Error('오버레이 영상 준비 실패')), { once: true })
-        })
+    return () => {
+      if (document.pictureInPictureElement === video) {
+        document.exitPictureInPicture().catch(() => {})
       }
+      const stream = video.srcObject as MediaStream | null
+      stream?.getTracks().forEach((t) => t.stop())
+      video.srcObject = null
+      video.remove()
+      mobilePipVideoRef.current = null
+      mobilePipCanvasRef.current = null
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!mobilePipCanvasRef.current) return
+    drawOverlayFrame(mobilePipCanvasRef.current, bosses, now)
+  }, [bosses, now])
+
+  /**
+   * 안드로이드는 임의의 HTML 을 PiP로 못 띄우고 <video> 에 대한 PiP만 지원한다. 그래서
+   * 보스 목록을 캔버스에 그림으로 그려서 동영상 스트림으로 바꾼 뒤, 그 동영상에 PiP를
+   * 걸어서 "다른 앱 위에 계속 뜨는 작은 창"처럼 우회한다. video/canvas 는 이미 마운트 시점에
+   * 준비돼 있으므로 여기선 클릭 인정이 끊기지 않게 곧바로 요청만 한다.
+   */
+  const startMobilePip = async () => {
+    const video = mobilePipVideoRef.current
+    if (!video) {
+      setError('오버레이 준비 중입니다. 잠시 후 다시 눌러주세요.')
+      return
+    }
+    try {
       await video.play()
       await video.requestPictureInPicture()
       video.addEventListener('leavepictureinpicture', () => stopMobilePip(), { once: true })
@@ -292,13 +309,6 @@ export function BossTimerPage() {
       )
     }
   }
-
-  useEffect(() => {
-    if (!mobilePipActive || !mobilePipCanvasRef.current) return
-    drawOverlayFrame(mobilePipCanvasRef.current, bosses, now)
-  }, [mobilePipActive, bosses, now])
-
-  useEffect(() => stopMobilePip, [stopMobilePip])
 
   /**
    * "오버레이" 버튼: 데스크톱 크롬은 Document Picture-in-Picture로 게임 창 위에 계속
