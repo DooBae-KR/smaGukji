@@ -5,6 +5,7 @@ import type { BossTimerRow, SpawnType } from './api'
 import { BOSS_SHEET_CSV_URL, DEFAULT_BOSS_SEED, parseBossSheet } from './sheetImport'
 import { getMyEndpoint, getSubscriptionState, subscribeToPush, unsubscribeFromPush } from './webPush'
 import { OverlayView } from './OverlayView'
+import { drawOverlayFrame } from './mobileOverlayCanvas'
 import './boss-timer.css'
 
 /** 데스크톱 크롬(116+)에만 있는 실험적 API. 게임 창 위에 계속 떠 있는 작은 창을 만든다. */
@@ -93,6 +94,9 @@ export function BossTimerPage() {
   const slug = useMemo(getSlug, [])
   const isOverlay = useMemo(() => new URLSearchParams(window.location.search).get('overlay') === '1', [])
   const [pipWindow, setPipWindow] = useState<DocumentPictureInPictureWindow | null>(null)
+  const [mobilePipActive, setMobilePipActive] = useState(false)
+  const mobilePipCanvasRef = useRef<HTMLCanvasElement | null>(null)
+  const mobilePipVideoRef = useRef<HTMLVideoElement | null>(null)
   const [exists, setExists] = useState<boolean | null>(null)
   const [password, setPasswordInput] = useState('')
   const [unlocked, setUnlocked] = useState(false)
@@ -211,11 +215,67 @@ export function BossTimerPage() {
     window.location.href = url.toString()
   }
 
+  const stopMobilePip = useCallback(() => {
+    if (document.pictureInPictureElement) {
+      document.exitPictureInPicture().catch(() => {})
+    }
+    const video = mobilePipVideoRef.current
+    if (video) {
+      const stream = video.srcObject as MediaStream | null
+      stream?.getTracks().forEach((t) => t.stop())
+      video.srcObject = null
+      video.remove()
+      mobilePipVideoRef.current = null
+    }
+    mobilePipCanvasRef.current = null
+    setMobilePipActive(false)
+  }, [])
+
+  /**
+   * 안드로이드는 임의의 HTML 을 PiP로 못 띄우고 <video> 에 대한 PiP만 지원한다. 그래서
+   * 보스 목록을 캔버스에 그림으로 그려서 동영상 스트림으로 바꾼 뒤, 그 동영상에 PiP를
+   * 걸어서 "다른 앱 위에 계속 뜨는 작은 창"처럼 우회한다.
+   */
+  const startMobilePip = async () => {
+    const canvas = document.createElement('canvas')
+    canvas.width = 320
+    canvas.height = 240
+    drawOverlayFrame(canvas, bosses, now)
+    mobilePipCanvasRef.current = canvas
+
+    const video = document.createElement('video')
+    video.muted = true
+    video.playsInline = true
+    // 화면에 안 보이게 하되, display:none 이면 일부 브라우저가 PiP 를 거부해서 투명하게만 둔다.
+    Object.assign(video.style, { position: 'fixed', width: '2px', height: '2px', opacity: '0.01', pointerEvents: 'none', left: '0', top: '0' })
+    document.body.appendChild(video)
+    video.srcObject = canvas.captureStream(2)
+    mobilePipVideoRef.current = video
+
+    try {
+      await video.play()
+      await video.requestPictureInPicture()
+      video.addEventListener('leavepictureinpicture', () => stopMobilePip(), { once: true })
+      setMobilePipActive(true)
+    } catch (err) {
+      stopMobilePip()
+      setError((err as Error).message)
+    }
+  }
+
+  useEffect(() => {
+    if (!mobilePipActive || !mobilePipCanvasRef.current) return
+    drawOverlayFrame(mobilePipCanvasRef.current, bosses, now)
+  }, [mobilePipActive, bosses, now])
+
+  useEffect(() => stopMobilePip, [stopMobilePip])
+
   /**
    * "오버레이" 버튼: 데스크톱 크롬은 Document Picture-in-Picture로 게임 창 위에 계속
    * 떠 있는 작은 창을 만든다(같은 화면 상태를 그대로 그 창에 그려 넣는다, 새로고침 없음).
-   * 그 외(안드로이드 등)는 지원 자체가 없어서, 같은 페이지를 &overlay=1 을 붙여 새
-   * 팝업 창으로 띄운다 — "항상 위" 는 아니고 사용자가 직접 배치해야 한다.
+   * 안드로이드 등 동영상 PiP만 지원하는 브라우저는 캔버스→동영상 우회 방식을 쓴다.
+   * 둘 다 안 되면 같은 페이지를 &overlay=1 을 붙여 새 팝업 창으로 띄운다 — 이건
+   * "항상 위" 는 아니고 사용자가 직접 배치해야 한다.
    */
   const handleOpenOverlay = async () => {
     if (window.documentPictureInPicture) {
@@ -229,6 +289,10 @@ export function BossTimerPage() {
         setError((err as Error).message)
         return
       }
+    }
+    if (document.pictureInPictureEnabled) {
+      await startMobilePip()
+      return
     }
     const url = new URL(window.location.href)
     url.searchParams.set('overlay', '1')
@@ -742,8 +806,12 @@ export function BossTimerPage() {
         ) : (
           <button onClick={() => setShowInstallHelp((v) => !v)}>📲 홈 화면에 추가</button>
         )}
-        <button onClick={handleOpenOverlay} disabled={!!pipWindow} title="게임 위에 띄워두는 작은 알림 창 (데스크톱 크롬 전용, 그 외는 팝업 창)">
-          🪟 {pipWindow ? '오버레이 켜짐' : '오버레이'}
+        <button
+          onClick={mobilePipActive ? stopMobilePip : handleOpenOverlay}
+          disabled={!!pipWindow}
+          title="게임/다른 앱 위에 띄워두는 작은 알림 창 (데스크톱 크롬, 안드로이드 크롬 지원)"
+        >
+          🪟 {pipWindow || mobilePipActive ? '오버레이 켜짐(끄려면 클릭)' : '오버레이'}
         </button>
       </header>
 
