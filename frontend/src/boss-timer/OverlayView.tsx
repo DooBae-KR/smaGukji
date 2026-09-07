@@ -56,13 +56,14 @@ export function OverlayView({ bosses, now }: { bosses: BossTimerRow[]; now: numb
               animation: due ? 'overlay-pulse 1s ease-in-out infinite' : undefined,
             }}
           >
-            <span style={{ fontSize: 13, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              {b.level != null && <span style={{ opacity: 0.6, fontWeight: 400, marginRight: 4 }}>Lv{b.level}</span>}
+            <span style={{ flex: 1, minWidth: 0, fontSize: 12, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {b.level != null && <span style={{ opacity: 0.6, fontWeight: 400, marginRight: 3 }}>Lv{b.level}</span>}
               {b.name}
             </span>
             <span
               style={{
-                fontSize: 13,
+                flexShrink: 0,
+                fontSize: 12,
                 fontWeight: 700,
                 fontVariantNumeric: 'tabular-nums',
                 whiteSpace: 'nowrap',
