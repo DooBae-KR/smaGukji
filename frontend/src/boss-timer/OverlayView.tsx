@@ -20,7 +20,15 @@ function formatOverlayRemaining(nextSpawnAt: string, now: number): string {
 
 const OVERLAY_WINDOW_MS = 30 * 60000
 
-export function OverlayView({ bosses, now }: { bosses: BossTimerRow[]; now: number }) {
+interface OverlayViewProps {
+  bosses: BossTimerRow[]
+  now: number
+  /** 데스크톱 PiP 오버레이 전용: 로그인(비밀번호 확인)된 관리자면 여기서 바로 사망 처리를 할 수 있다. */
+  isAdmin?: boolean
+  onDefeat?: (bossId: string) => void
+}
+
+export function OverlayView({ bosses, now, isAdmin, onDefeat }: OverlayViewProps) {
   const sorted = [...bosses]
     .filter((b) => b.is_active && b.notify_enabled && new Date(b.next_spawn_at).getTime() - now <= OVERLAY_WINDOW_MS)
     .sort((a, b) => new Date(a.next_spawn_at).getTime() - new Date(b.next_spawn_at).getTime())
@@ -74,6 +82,25 @@ export function OverlayView({ bosses, now }: { bosses: BossTimerRow[]; now: numb
             >
               {due ? '등장!' : formatOverlayRemaining(b.next_spawn_at, now)}
             </span>
+            {isAdmin && onDefeat && (
+              <button
+                onClick={() => onDefeat(b.boss_id)}
+                title="지금 사망 처리 → 쿨타임부터 다시 시작"
+                style={{
+                  flexShrink: 0,
+                  fontSize: 11,
+                  fontWeight: 600,
+                  padding: '3px 6px',
+                  borderRadius: 5,
+                  border: 'none',
+                  background: due ? 'rgba(255,255,255,0.25)' : '#3a3d4d',
+                  color: '#fff',
+                  cursor: 'pointer',
+                }}
+              >
+                💀 사망
+              </button>
+            )}
           </div>
         )
       })}

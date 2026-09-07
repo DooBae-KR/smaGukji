@@ -863,7 +863,19 @@ export function BossTimerPage() {
         </button>
       </header>
 
-      {pipWindow && createPortal(<OverlayView bosses={bosses} now={now} />, pipWindow.document.body)}
+      {pipWindow &&
+        createPortal(
+          <OverlayView
+            bosses={bosses}
+            now={now}
+            isAdmin={unlocked}
+            onDefeat={(bossId) => {
+              const b = bosses.find((x) => x.boss_id === bossId)
+              if (b) void handleMarkDeath(b, false)
+            }}
+          />,
+          pipWindow.document.body,
+        )}
 
       {showInstallHelp && !installPrompt && (
         <div className="boss-timer-card install-help">
