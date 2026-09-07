@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import * as api from './api'
 import type { BossTimerRow, SpawnType } from './api'
 import { BOSS_SHEET_CSV_URL, DEFAULT_BOSS_SEED, parseBossSheet } from './sheetImport'
@@ -95,6 +95,75 @@ export function BossTimerPage() {
   const [showHoursEditor, setShowHoursEditor] = useState(false)
   const [quietStart, setQuietStart] = useState('0')
   const [quietEnd, setQuietEnd] = useState('24')
+
+  // 이 화면을 켜놓고 보고 있을 때, 등장 시각이 되면 직접 끄기 전까지 진동+소리를 반복한다.
+  // (푸시 알림의 vibrate 패턴은 한 번만 울리고 끝나서 "끄기 전까지 계속" 은 안 됨 — 이건
+  // 탭이 열려 있을 때만 동작하는 별도의 보조 알람이다.)
+  const [ringingBoss, setRingingBoss] = useState<BossTimerRow | null>(null)
+  const alarmIntervalRef = useRef<number | null>(null)
+  const alarmAudioCtxRef = useRef<AudioContext | null>(null)
+  const dismissedSpawnRef = useRef<Record<string, string>>({})
+
+  const stopAlarm = useCallback(() => {
+    if (alarmIntervalRef.current !== null) {
+      window.clearInterval(alarmIntervalRef.current)
+      alarmIntervalRef.current = null
+    }
+    if (alarmAudioCtxRef.current) {
+      alarmAudioCtxRef.current.close().catch(() => {})
+      alarmAudioCtxRef.current = null
+    }
+    try {
+      navigator.vibrate?.(0)
+    } catch {
+      // 진동 미지원 기기는 무시
+    }
+    setRingingBoss((current) => {
+      if (current) dismissedSpawnRef.current[current.boss_id] = current.next_spawn_at
+      return null
+    })
+  }, [])
+
+  useEffect(() => {
+    if (ringingBoss) return // 이미 하나 울리는 중이면 새로 트리거하지 않는다.
+    const due = bosses.find(
+      (b) =>
+        b.notify_enabled &&
+        !myMutes.has(b.boss_id) &&
+        new Date(b.next_spawn_at).getTime() <= now &&
+        dismissedSpawnRef.current[b.boss_id] !== b.next_spawn_at,
+    )
+    if (!due) return
+
+    setRingingBoss(due)
+    const AudioCtx = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
+    const beep = () => {
+      try {
+        navigator.vibrate?.([500, 300])
+      } catch {
+        // 진동 미지원 기기는 무시
+      }
+      if (!AudioCtx) return
+      try {
+        const ctx = alarmAudioCtxRef.current ?? new AudioCtx()
+        alarmAudioCtxRef.current = ctx
+        const osc = ctx.createOscillator()
+        const gain = ctx.createGain()
+        osc.frequency.value = 880
+        gain.gain.value = 0.2
+        osc.connect(gain).connect(ctx.destination)
+        osc.start()
+        osc.stop(ctx.currentTime + 0.3)
+      } catch {
+        // 오디오 재생이 막힌 브라우저(자동재생 정책 등)는 진동만으로 대신한다.
+      }
+    }
+    beep()
+    alarmIntervalRef.current = window.setInterval(beep, 1200)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [now, bosses, myMutes, ringingBoss])
+
+  useEffect(() => stopAlarm, [stopAlarm])
 
   // 방 만들기 화면용
   const [createPassword, setCreatePassword] = useState('')
@@ -540,6 +609,12 @@ export function BossTimerPage() {
 
   return (
     <div className="boss-timer-app">
+      {ringingBoss && (
+        <div className="alarm-banner">
+          <span>🔔 {ringingBoss.name} 등장!</span>
+          <button onClick={stopAlarm}>알람 끄기</button>
+        </div>
+      )}
       <header className="boss-timer-header">
         <h1>⚡ 보스 타이머</h1>
         <span className="boss-timer-room-name">방: {slug}</span>

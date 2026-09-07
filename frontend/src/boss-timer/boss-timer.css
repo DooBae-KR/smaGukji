@@ -588,3 +588,36 @@
     row-gap: 6px;
   }
 }
+
+/* 등장 시각이 됐는데 직접 끄기 전까지 계속 진동+소리를 울리는 알람 배너. */
+.alarm-banner {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  margin-bottom: 12px;
+  border-radius: 10px;
+  background: #d92626;
+  color: #fff;
+  font-weight: 700;
+  animation: alarm-banner-pulse 1s ease-in-out infinite;
+}
+
+.alarm-banner button {
+  background: #fff;
+  color: #d92626;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+@keyframes alarm-banner-pulse {
+  0%, 100% { background: #d92626; }
+  50% { background: #b31414; }
+}
