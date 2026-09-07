@@ -262,6 +262,7 @@ export function BossTimerPage() {
     const video = document.createElement('video')
     video.muted = true
     video.playsInline = true
+    video.setAttribute('webkit-playsinline', 'true') // 구형 iOS 사파리용
     // 화면에 안 보이게 하되, display:none 이면 일부 브라우저가 PiP 를 거부해서 투명하게만 둔다.
     Object.assign(video.style, { position: 'fixed', width: '2px', height: '2px', opacity: '0.01', pointerEvents: 'none', left: '0', top: '0' })
     document.body.appendChild(video)
@@ -269,13 +270,26 @@ export function BossTimerPage() {
     mobilePipVideoRef.current = video
 
     try {
+      // iOS(사파리/아이폰의 크롬도 내부는 똑같이 사파리 엔진) 는 video 의 크기 정보(메타데이터)가
+      // 준비되기 전에 PiP 를 요청하면 조용히 실패한다. loadedmetadata 를 기다렸다가 요청해야
+      // 사용자 클릭으로 시작된 동작으로 인정받는다(안드로이드 크롬은 이 순서 없이도 되지만
+      // 똑같이 해도 문제없다).
+      if (video.readyState < 1) {
+        await new Promise<void>((resolve, reject) => {
+          video.addEventListener('loadedmetadata', () => resolve(), { once: true })
+          video.addEventListener('error', () => reject(new Error('오버레이 영상 준비 실패')), { once: true })
+        })
+      }
       await video.play()
       await video.requestPictureInPicture()
       video.addEventListener('leavepictureinpicture', () => stopMobilePip(), { once: true })
       setMobilePipActive(true)
     } catch (err) {
       stopMobilePip()
-      setError((err as Error).message)
+      setError(
+        `오버레이를 시작하지 못했습니다: ${(err as Error).message}` +
+          ' (아이폰은 크롬을 설치해도 내부적으로는 사파리와 같은 엔진을 씁니다 — 사파리에서도 안 되면 이 기기는 이 기능 자체를 지원하지 않는 것입니다)',
+      )
     }
   }
 
