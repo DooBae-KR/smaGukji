@@ -61,8 +61,12 @@ function decodeBase64(base64: string): Uint8Array {
 
 Deno.serve(async (req: Request) => {
   const url = new URL(req.url)
-  // Supabase 가 /functions/v1/<slug> 접두사를 이미 벗겨서 넘길 때도, 그대로 넘길 때도 있어서 둘 다 처리한다.
-  let path = url.pathname.replace(/^\\//, '').replace(/^functions\\/v1\\/boss-timer-app\\/?/, '')
+  // pathname 이 "/functions/v1/boss-timer-app/..." 로 올 때도, "/boss-timer-app/..." 로
+  // (v1 부분만 벗겨져서) 올 때도, "/..." 로 (둘 다 벗겨져서) 올 때도 있어서 셋 다 처리한다.
+  let path = url.pathname
+    .replace(/^\\//, '')
+    .replace(/^functions\\/v1\\//, '')
+    .replace(/^boss-timer-app\\/?/, '')
   if (path === '' || path === 'index.html') path = 'boss-timer.html'
 
   const file = FILES[path]
