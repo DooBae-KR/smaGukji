@@ -95,6 +95,9 @@ export function BossTimerPage() {
   const [showHoursEditor, setShowHoursEditor] = useState(false)
   const [quietStart, setQuietStart] = useState('0')
   const [quietEnd, setQuietEnd] = useState('24')
+  const [showLevelEditor, setShowLevelEditor] = useState(false)
+  const [levelThreshold, setLevelThreshold] = useState('')
+  const [levelApplying, setLevelApplying] = useState(false)
 
   // 이 화면을 켜놓고 보고 있을 때, 등장 시각이 되면 직접 끄기 전까지 진동+소리를 반복한다.
   // (푸시 알림의 vibrate 패턴은 한 번만 울리고 끝나서 "끄기 전까지 계속" 은 안 됨 — 이건
@@ -240,6 +243,42 @@ export function BossTimerPage() {
       })
     } catch (err) {
       setError((err as Error).message)
+    }
+  }
+
+  /** 지정한 레벨 이하 보스만 내 폰 알림을 켜고, 그보다 높은 레벨은 끈다(레벨 없는 보스는 그대로 둔다). */
+  const handleApplyLevelThreshold = async () => {
+    if (!myEndpoint) {
+      setError('먼저 상단의 "🔔 이 폰으로 알림 받기" 를 눌러주세요.')
+      return
+    }
+    const threshold = Number(levelThreshold)
+    if (!Number.isFinite(threshold)) {
+      setError('레벨을 숫자로 입력하세요.')
+      return
+    }
+    setLevelApplying(true)
+    try {
+      const targets = bosses.filter((b) => b.level != null)
+      for (const b of targets) {
+        const shouldMute = (b.level as number) > threshold
+        if (myMutes.has(b.boss_id) === shouldMute) continue
+        await api.setPushMute(myEndpoint, b.boss_id, shouldMute)
+      }
+      setMyMutes((prev) => {
+        const next = new Set(prev)
+        for (const b of targets) {
+          if ((b.level as number) > threshold) next.add(b.boss_id)
+          else next.delete(b.boss_id)
+        }
+        return next
+      })
+      setShowLevelEditor(false)
+      setError(null)
+    } catch (err) {
+      setError((err as Error).message)
+    } finally {
+      setLevelApplying(false)
     }
   }
 
@@ -630,6 +669,7 @@ export function BossTimerPage() {
           <>
             <button className="ok" onClick={handleDisablePush}>🔔 폰 알림 켜짐</button>
             <button onClick={() => setShowHoursEditor((v) => !v)}>🕐 알림 시간대</button>
+            <button onClick={() => setShowLevelEditor((v) => !v)}>🎚 레벨 기준 알림</button>
           </>
         )}
         {pushState === 'unsubscribed' && (
@@ -687,6 +727,29 @@ export function BossTimerPage() {
             <span>시</span>
             <button className="primary" onClick={handleSaveQuietHours}>저장</button>
             <button onClick={() => setShowHoursEditor(false)}>닫기</button>
+          </div>
+        </div>
+      )}
+
+      {showLevelEditor && (
+        <div className="boss-timer-card install-help">
+          <b>레벨 기준으로 알림 받기 (내 폰만)</b>
+          <p className="muted">
+            예: 30 을 입력하면 레벨 30 이하 보스만 내 폰 알림이 켜지고, 그보다 높은 레벨은 꺼집니다.
+            레벨이 없는 보스는 건드리지 않습니다. 적용 후에도 보스별 🔔 버튼으로 개별 조정할 수 있습니다.
+          </p>
+          <div className="join-row">
+            <input
+              type="number"
+              placeholder="레벨"
+              value={levelThreshold}
+              onChange={(e) => setLevelThreshold(e.target.value)}
+            />
+            <span>이하만 알림</span>
+            <button className="primary" onClick={handleApplyLevelThreshold} disabled={levelApplying}>
+              {levelApplying ? '적용 중…' : '적용'}
+            </button>
+            <button onClick={() => setShowLevelEditor(false)}>닫기</button>
           </div>
         </div>
       )}
