@@ -18,9 +18,11 @@ function formatOverlayRemaining(nextSpawnAt: string, now: number): string {
   return `${sign}${minutes}분`
 }
 
+const OVERLAY_WINDOW_MS = 30 * 60000
+
 export function OverlayView({ bosses, now }: { bosses: BossTimerRow[]; now: number }) {
   const sorted = [...bosses]
-    .filter((b) => b.is_active && b.notify_enabled)
+    .filter((b) => b.is_active && b.notify_enabled && new Date(b.next_spawn_at).getTime() - now <= OVERLAY_WINDOW_MS)
     .sort((a, b) => new Date(a.next_spawn_at).getTime() - new Date(b.next_spawn_at).getTime())
 
   return (
@@ -36,7 +38,7 @@ export function OverlayView({ bosses, now }: { bosses: BossTimerRow[]; now: numb
       }}
     >
       <div style={{ fontSize: 12, opacity: 0.6, marginBottom: 6 }}>⚡ 보스 오버레이</div>
-      {sorted.length === 0 && <div style={{ fontSize: 13, opacity: 0.6 }}>알림 켜진 보스가 없습니다.</div>}
+      {sorted.length === 0 && <div style={{ fontSize: 13, opacity: 0.6 }}>30분 이내 등장하는 보스가 없습니다.</div>}
       {sorted.map((b) => {
         const dueMs = new Date(b.next_spawn_at).getTime() - now
         const due = dueMs <= 0
