@@ -74,18 +74,14 @@ Deno.serve(async (req: Request) => {
     return new Response('Not found', { status: 404 })
   }
 
+  // Content-Encoding: gzip 을 직접 선언하면 Supabase 게이트웨이의 자체 압축 협상과
+  // 충돌해 한글이 깨지는 문제가 있어서(2026-09-07), 항상 압축을 풀어 평문 바이트로 내려준다.
+  // gzip+base64 로 담아두는 이유는 순전히 소스 파일 용량을 줄이기 위해서다.
   const gz = decodeBase64(file.gzipBase64)
-  const acceptsGzip = (req.headers.get('accept-encoding') ?? '').includes('gzip')
-  const cacheControl = path === 'boss-timer.html' ? 'no-cache' : 'public, max-age=3600'
-
-  if (acceptsGzip) {
-    return new Response(gz, {
-      headers: { 'Content-Type': file.contentType, 'Content-Encoding': 'gzip', 'Cache-Control': cacheControl },
-    })
-  }
-
   const decompressed = await new Response(gz).blob()
   const stream = decompressed.stream().pipeThrough(new DecompressionStream('gzip'))
+  const cacheControl = path === 'boss-timer.html' ? 'no-cache' : 'public, max-age=3600'
+
   return new Response(stream, {
     headers: { 'Content-Type': file.contentType, 'Cache-Control': cacheControl },
   })
