@@ -69,6 +69,14 @@ function formatSpawnAt(nextSpawnAt: string): string {
 
 const WEEKDAY_LABEL = ['일', '월', '화', '수', '목', '금', '토']
 
+/** 방 slug(URL에 쓰는 영문 이름) 대신 화면에 보여줄 서버 이름. 없는 slug는 그대로 보여준다. */
+const ROOM_DISPLAY_NAME: Record<string, string> = {
+  hera2: '헤라 2서버',
+}
+function roomLabel(slug: string): string {
+  return ROOM_DISPLAY_NAME[slug] ?? slug
+}
+
 function scheduleLabel(b: BossTimerRow): string {
   if (b.spawn_type === 2 && b.weekday !== null && b.fixed_time) {
     return `매주 ${WEEKDAY_LABEL[b.weekday]} ${b.fixed_time.slice(0, 5)}`
@@ -792,7 +800,7 @@ export function BossTimerPage() {
       )}
       <header className="boss-timer-header">
         <h1>⚡ 보스 타이머</h1>
-        <span className="boss-timer-room-name">방: {slug}</span>
+        <span className="boss-timer-room-name">방: {roomLabel(slug)}</span>
         <button className="switch-room" onClick={() => { const n = prompt('들어갈 서버 이름을 입력하세요', slug); if (n) goToRoom(n) }}>
           다른 서버로
         </button>
