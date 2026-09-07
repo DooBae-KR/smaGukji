@@ -238,7 +238,7 @@ export function BossTimerPage() {
    */
   const startMobilePip = async () => {
     const canvas = document.createElement('canvas')
-    canvas.width = 320
+    canvas.width = 220
     canvas.height = 240
     drawOverlayFrame(canvas, bosses, now)
     mobilePipCanvasRef.current = canvas
@@ -280,7 +280,7 @@ export function BossTimerPage() {
   const handleOpenOverlay = async () => {
     if (window.documentPictureInPicture) {
       try {
-        const win = await window.documentPictureInPicture.requestWindow({ width: 260, height: 360 })
+        const win = await window.documentPictureInPicture.requestWindow({ width: 170, height: 360 })
         win.document.title = '보스 오버레이'
         win.addEventListener('pagehide', () => setPipWindow(null))
         setPipWindow(win)

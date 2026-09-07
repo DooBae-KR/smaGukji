@@ -55,7 +55,7 @@ export function drawOverlayFrame(canvas: HTMLCanvasElement, bosses: BossTimerRow
     ctx.fillStyle = due ? '#ffffff' : '#f5f5f7'
     ctx.font = '13px system-ui, sans-serif'
     const label = b.level != null ? `Lv${b.level} ${b.name}` : b.name
-    ctx.fillText(label.length > 14 ? label.slice(0, 13) + '…' : label, 10, y)
+    ctx.fillText(label.length > 9 ? label.slice(0, 8) + '…' : label, 10, y)
 
     ctx.textAlign = 'right'
     ctx.fillStyle = due ? '#ffffff' : '#ff6b6b'
