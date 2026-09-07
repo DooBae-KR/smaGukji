@@ -151,6 +151,9 @@ export function BossTimerPage() {
   }, [])
 
   useEffect(() => {
+    // 오버레이(PiP 창/팝업)를 켜놓은 동안은 오버레이 자체가 남은시간을 보여주고 있으니
+    // 진동+비프음 알람은 잠깐 꺼둔다. 오버레이를 끄면 다시 정상적으로 울린다.
+    if (pipWindow || mobilePipActive) return
     const due = bosses.filter(
       (b) =>
         b.notify_enabled &&
@@ -192,9 +195,14 @@ export function BossTimerPage() {
     beep()
     alarmIntervalRef.current = window.setInterval(beep, 1200)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [now, bosses, myMutes])
+  }, [now, bosses, myMutes, pipWindow, mobilePipActive])
 
   useEffect(() => stopAlarm, [stopAlarm])
+
+  // 오버레이를 켜는 순간 이미 울리고 있던 알람도 즉시 끈다.
+  useEffect(() => {
+    if (pipWindow || mobilePipActive) stopAlarm()
+  }, [pipWindow, mobilePipActive, stopAlarm])
 
   useEffect(() => {
     if (!pipWindow) return
