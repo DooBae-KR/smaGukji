@@ -205,6 +205,38 @@ export function BossTimerPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [now, bosses, myMutes, pipWindow, mobilePipActive])
 
+  // 레벨 40 이하 보스는 서버(boss_timer_recompute_schedule)가 등장 1분 뒤 자동으로 다음
+  // 쿨타임으로 넘긴다. 그렇게 next_spawn_at 이 바뀌어 들어오면, 사람이 "알람 끄기" 를
+  // 누르지 않았어도 더 이상 울릴 이유가 없으니 울리고 있던 목록에서 빼준다.
+  useEffect(() => {
+    setRingingBosses((current) => {
+      if (current.length === 0) return current
+      const stillDue = current.filter((rb) => {
+        const fresh = bosses.find((b) => b.boss_id === rb.boss_id)
+        return fresh != null && fresh.next_spawn_at === rb.next_spawn_at
+      })
+      return stillDue.length === current.length ? current : stillDue
+    })
+  }, [bosses])
+
+  // 위 정리로 목록이 비면 인터벌/오디오도 같이 끈다("알람 끄기" 버튼을 누른 것과 동일한 정리).
+  useEffect(() => {
+    if (ringingBosses.length > 0) return
+    if (alarmIntervalRef.current !== null) {
+      window.clearInterval(alarmIntervalRef.current)
+      alarmIntervalRef.current = null
+    }
+    if (alarmAudioCtxRef.current) {
+      alarmAudioCtxRef.current.close().catch(() => {})
+      alarmAudioCtxRef.current = null
+    }
+    try {
+      navigator.vibrate?.(0)
+    } catch {
+      // 진동 미지원 기기는 무시
+    }
+  }, [ringingBosses])
+
   useEffect(() => stopAlarm, [stopAlarm])
 
   // 오버레이를 켜는 순간 이미 울리고 있던 알람도 즉시 끈다.
